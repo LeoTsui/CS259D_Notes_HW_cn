@@ -1,0 +1,39 @@
+{
+    "author": "Leo Tsui",
+    "title": "CS 259D 《数据挖掘与网络安全》笔记",
+    "description": "本笔记是对课程CS 259D中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。",
+    "links": {
+        "sharing": {
+            "facebook": true,
+            "twitter": true,
+            "google": true,
+            "weibo": true,
+            "instapaper": false,
+            "vk": false,
+            "all": [
+                "facebook", "google", "twitter",
+                "weibo", "instapaper"
+            ]
+        }
+    },
+    "plugins": [
+        "katex",
+        "github",
+        "github-buttons",
+        "anchors"
+    ],
+    "pluginsConfig": {
+        "github": {
+            "url": "https://github.com/LeoTsui/CS259D_Notes_HW_cn"
+        },
+        "github-buttons": {
+            "buttons": [{
+                "user": "LeoTsui",
+                "repo": "CS259D_Notes_HW_cn",
+                "type": "star",
+                "size": "small",
+                "count": false
+            }]
+        }
+    }
+}

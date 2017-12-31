@@ -8,8 +8,8 @@
 - [BotFinder](#botfinder)
     - [符号定义](#%E7%AC%A6%E5%8F%B7%E5%AE%9A%E4%B9%89)
     - [输入数据处理](#%E8%BE%93%E5%85%A5%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86)
-    - [Flow Reassembly](#flow-reassembly)
-    - [Trace Extraction](#trace-extraction)
+    - [流量重组](#%E6%B5%81%E9%87%8F%E9%87%8D%E7%BB%84)
+    - [Trace 提取](#trace-%E6%8F%90%E5%8F%96)
     - [统计特征分析](#%E7%BB%9F%E8%AE%A1%E7%89%B9%E5%BE%81%E5%88%86%E6%9E%90)
     - [模型创建（训练）](#%E6%A8%A1%E5%9E%8B%E5%88%9B%E5%BB%BA%EF%BC%88%E8%AE%AD%E7%BB%83%EF%BC%89)
     - [恶意软件检测](#%E6%81%B6%E6%84%8F%E8%BD%AF%E4%BB%B6%E6%A3%80%E6%B5%8B)
@@ -72,11 +72,11 @@
     * Anubis
 * 容忍杂讯
 
-### Flow Reassembly
+### 流量重组
 
 * 依照 NetFlow 汇总数据
 
-### Trace Extraction
+### Trace 提取
 
 ![不同统计模式的 trace](images/Traces_BotFinder.png)
 

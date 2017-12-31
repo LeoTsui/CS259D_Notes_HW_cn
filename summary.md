@@ -1,9 +1,9 @@
 # Summary
 
-* [CS 259D Notes Introduction](readme.md)
-* [Notes](notes/notes_cn.md)
-    * [Introduction](notes/Introduction_cn.md)
-    * [Botnets](notes/Botnet_cn.md)
+* [CS 259D 笔记说明](readme.md)
+* [课程笔记](notes/notes_cn.md)
+    * [简介](notes/Introduction_cn.md)
+    * [僵尸网络](notes/Botnet_cn.md)
         * [BotFinder](notes/BotFinder_cn.md)
         * [BotMiner](notes/BotMiner_cn.md)
         * [EXPOSURE](notes/EXPOSURE_cn.md)

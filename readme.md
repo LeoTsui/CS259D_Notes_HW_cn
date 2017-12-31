@@ -10,7 +10,7 @@ GitBook: [CS259D Notes cn](https://leotsui.gitbooks.io/cs259d-notes-cn/)
 
 <!-- TOC -->
 
-- [讲义](#%E8%AE%B2%E4%B9%89)
+- [课程笔记](#%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0)
     - [介绍](#%E4%BB%8B%E7%BB%8D)
     - [僵尸网络](#%E5%83%B5%E5%B0%B8%E7%BD%91%E7%BB%9C)
     - [内部威胁](#%E5%86%85%E9%83%A8%E5%A8%81%E8%83%81)
@@ -32,7 +32,7 @@ GitBook: [CS259D Notes cn](https://leotsui.gitbooks.io/cs259d-notes-cn/)
 
 <!-- /TOC -->
 
-## 讲义
+## 课程笔记
 
 ### 介绍
 

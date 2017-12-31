@@ -17,7 +17,7 @@
     - [僵尸网络的策略](#%E5%83%B5%E5%B0%B8%E7%BD%91%E7%BB%9C%E7%9A%84%E7%AD%96%E7%95%A5)
     - [僵尸网络的成本](#%E5%83%B5%E5%B0%B8%E7%BD%91%E7%BB%9C%E7%9A%84%E6%88%90%E6%9C%AC)
     - [BotFinder 检测失败的可能原因](#botfinder-%E6%A3%80%E6%B5%8B%E5%A4%B1%E8%B4%A5%E7%9A%84%E5%8F%AF%E8%83%BD%E5%8E%9F%E5%9B%A0)
-- [Reference](#reference)
+- [参考资料](#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99)
 
 <!-- /TOC -->
 
@@ -61,7 +61,7 @@
 
 * $$\tau$$, trace ,两个网络端点间数据流动的时间序列
 * $$M$$,模型
-* $$\tau_M$$, 模型 $$M$$ ， trace $$\tau$$ 的分数
+* $$\tau_M$$, 模型 $$M$$ ， trace $$\tau$$， 的分数
 * $$q_{cluster}$$, 质量评级
 
 ### 输入数据处理
@@ -156,7 +156,7 @@
 * 非常频繁地更换 C&C 服务器
 * 每次 C&C 服务器更改后使用完全不同的通信模式
 
-## Reference
+## 参考资料
 
 * BotFinder: Finding Bots in Network Traffic Without Deep Packet Inspection
 * CS 259D Lecture 2

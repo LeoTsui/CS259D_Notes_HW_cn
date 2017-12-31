@@ -2,6 +2,7 @@
     "author": "Leo Tsui",
     "title": "CS 259D 《数据挖掘与网络安全》笔记",
     "description": "本笔记是对课程CS 259D中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。",
+    "language": "zh-hans",
     "links": {
         "sharing": {
             "facebook": true,
@@ -20,7 +21,8 @@
         "katex",
         "github",
         "github-buttons",
-        "anchors"
+        "anchors",
+        "splitter"
     ],
     "pluginsConfig": {
         "github": {

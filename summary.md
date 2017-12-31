@@ -4,7 +4,7 @@
 * [课程笔记](notes/notes_cn.md)
     * [简介](notes/Introduction_cn.md)
     * [僵尸网络](notes/Botnet_cn.md)
-        * [BotFinder](notes/BotFinder_cn.md)
+        * [BotFinder （更新）](notes/BotFinder_cn.md)
         * [BotMiner](notes/BotMiner_cn.md)
         * [EXPOSURE](notes/EXPOSURE_cn.md)
     * [Insider Threats](notes/Insider_Threats_cn.md)

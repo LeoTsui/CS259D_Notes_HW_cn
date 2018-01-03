@@ -13,11 +13,11 @@
     - [基于 DNS 应答的特征](#%E5%9F%BA%E4%BA%8E-dns-%E5%BA%94%E7%AD%94%E7%9A%84%E7%89%B9%E5%BE%81)
     - [基于 TTL 的特征](#%E5%9F%BA%E4%BA%8E-ttl-%E7%9A%84%E7%89%B9%E5%BE%81)
     - [基于域名的特征](#%E5%9F%BA%E4%BA%8E%E5%9F%9F%E5%90%8D%E7%9A%84%E7%89%B9%E5%BE%81)
-- [Training](#training)
-    - [The Classifier](#the-classifier)
-        - [C4.5 decision tree algorithm](#c45-decision-tree-algorithm)
+- [训练](#%E8%AE%AD%E7%BB%83)
+    - [分类器](#%E5%88%86%E7%B1%BB%E5%99%A8)
+        - [C4.5 决策树算法](#c45-%E5%86%B3%E7%AD%96%E6%A0%91%E7%AE%97%E6%B3%95)
 - [Evaluation](#evaluation)
-- [Limitation (Evasion)](#limitation-evasion)
+- [局限 (逃避检测)](#%E5%B1%80%E9%99%90-%E9%80%83%E9%81%BF%E6%A3%80%E6%B5%8B)
 - [参考资料](#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99)
 
 <!-- /TOC -->
@@ -65,8 +65,8 @@
     * 超过1000亿 DNS 查询（平均每分钟100万次查询）
     * 480万个不同的域名
     * 过滤
-        * Alexa排名前1000（减少20％）
-        * 超过1年的域名（减少50％以上）
+        * Alexa 排名前1000（减少20%）
+        * 超过1年的域名（减少50%以上）
 * 恶意域名
     * 3500个域名
     * 类型
@@ -74,7 +74,7 @@
         * 驱动下载网站
         * 网络钓鱼/诈骗页面
     * 示例
-        * `malwaredomains.com``
+        * [Malware Domain Block List](http://www.malwaredomains.com/)
         * Zeus 屏蔽列表
 * 良性的域名
     * 3000个域名
@@ -90,7 +90,7 @@
     * 访问比例
 * F2: 基于 DNS 应答的特征
     * 不同 IP 地址的数量
-    * 不同国家的数量
+    * 不同的 IP 地址所在国家的数量
     * 共享域名的数量
     * 反向 DNS 查询结果
 * F3: 基于 TTL 的特征
@@ -101,7 +101,7 @@
     * 使用特定的 TTL 范围的百分比
 * F4: 基于域名的特征
     * 数字字符的百分比
-    * LMS 长度的百分比
+    * 最长有意义子串（longest meaningful substring，LMS）长度的百分比
 
 ### 基于时间的特征
 
@@ -153,104 +153,103 @@
 
 ### 基于 DNS 应答的特征
 
-* Domains map to multiple IPs, and IPs be shared across different domains
-* Number of distinct IP addresses
-*    Resolved for a domain during the experiment
-* Number of distinct countries
-* Number of domains share the IP with
-    * Can be large for web hosting providers as well
-    * Reduce false positives by looking for reverse DNS query results on Google top 3 search results
-* Reverse DNS query results
-* Reduce false positives
-*    Reverse DNS answer from Google
+* 域名映射到多个 IP 地址，IP 地址被不同的域名共享
+* 不同 IP 地址的数量
+    * 在实验期间解析的域名
+* 不同的 IP 地址所在国家的数量
+* 共用 IP 的域名数量
+    * 网络托管提供商的共用 IP 量可能很多
+* 反向 DNS 查询结果
+    * 通过在Google前3名搜索结果中，反向查询 DNS，以此来减少误报
 
 ### 基于 TTL 的特征
 
-* TTL(Time To Live): Length of time to cache a DNS response
-    * Recommended between 1-5 days
-* Insight
-    * Sophisticated infrastructure of malicious networks cause frequent TTL changes
-    * Setting lower TTL values to the less reliable hosts
-* Average TTL
-    * High availability systems
-        * Low TTL values
-        * Round Robin DNS
-        * Example: CDNs, Fast Flux botnets
-* Standard Deviation of TTL
-    * Compromised home computers (dynamic IP) assigned much shorter TTL than compromised servers (static IP)
-* Number of distinct TTL values
-* Number of TTL change
-    * Higher in malicious domains
-* Percentage usage of specific TTL ranges
-    * Considered ranges: $$[0,1), [1,10), [10,100), [100,300), [300,900), [900, inf)$$
-    * Malicious domains peak at $$[0, 100)$$ ranges
+* TTL（Time To Live，生存时间）：DNS响应缓存的时长
+    * 建议时长1-5天
+* 启发
+    * 恶意网络复杂的基础设施会频繁更改 TTL
+    * 设置的 TTL 值较低的主机不太可靠
+* TTL 平均值
+    * 高效的系统
+        * TTL 值低
+        * 轮询调度 DNS
+        * 例如：CDN，Fast Flux 僵尸网络
+* TTL 标准差
+    * 受感染的家庭计算机（动态 IP）分配的 TTL 要比受感染的服务器（静态 IP）短
+* 不同的TTL值的数量
+* TTL 变化次数
+    * 恶意域名变化次数较高
+* 特定的 TTL 区间的使用占比
+    * 考虑一下范围：$$[0,1), [1,10), [10,100), [100,300), [300,900), [900, inf)$$
+    * 恶意域名的区间在 $$[0, 100)$$
 
 ### 基于域名的特征
 
-* Insight
-    * Easy-to-remember names
-    * Important for benign services
-        * Main purpose of DNS
-    * Unimportant for attackers (e.g., DGA-generated)
-* Ratio of numerical characters to name length
-* Ratio of length of the longest meaningful substring to length of domain name
-*    Query name on Google & check # of hits vs a threshold
-* Combined to decrease false positives
-* Features applied to only second-level domains(SLD)
-* Other possible feature: entropy of the domain name
-    * DGA-generated names more random than human-generated
+* 启发
+    * 易于记忆的名字
+        * 对于正常的服务很重要
+        * DNS 的主要目的
+    * 对攻击者而言不重要（如，通过 DGA 生成）
+* 数字字符与名字长度的比例
+* 最长有意义子串（longest meaningful substring，LMS）的长度与域名长度的比例
+    * 在谷歌查询并把匹配数与特定的阈值相比较
+* 仅在二级域名（second-level domains，SLD）上使用特征
+    * `x.y.server.com` $$\rightarrow$$ `server.com`
+* 其他可能的功能：域名的熵
+    * DGA生成的域名比人为设定的更随机
 
-## Training
+## 训练
 
-* Training period
-    * Initial period of 7 days (for time-based features)
-    * Retraining every day
+* 训练周期
+    * 初始期限为7天（基于时间的特征）
+    * 每天重新训练
 
-### The Classifier
+### 分类器
 
-* J48 decision tree
+* J48 决策树
     * C4.5
-* Feature selection
-    * Percentage of miss-classified instances
+* 特征选择
+    * 错误分类的样本的百分比
 
-#### C4.5 decision tree algorithm
+#### C4.5 决策树算法
 
-* Check for base cases
-* For each attribute
-    * Compute attribute's normalized information gain
-* Split over attribute with highest gain
-* Recurse
-* Normalized information gain = difference in entropy of class values
+* 检查基本情况
+* 对于每个特征
+    * 计算特征的标准化信息增益
+* 以最高增益分割属性
+* 递归
+* 标准化的信息增益 = 类的熵值差异
 
 ## Evaluation
 
-* Evaluation of the Detection Rate
-    * 216 domains reported by malwareurls.com & present in dataset
-    * 5 had less than 20 queries
-        * be filtered
-    * 211 detected malicious
-    * Detection rate: 98%
-* Evaluation of the False Positives
-    * Filter out domains with < 20 requests in 2.5 months (300,000 domains remaining)
-    * 17,686 detected as malicious (5.9%)
-    * Unlabeled domains
-        * Hard to verify manually
-    * Verification
-        * Google searches
-        * Well-known spam lists
-        * Norton Safe Web
+* 评估检测率
+    * `malwareurls.com` 提供了569个域名
+        * 在受监视的网路中有216个域名被查询
+    * 5个域名查询次数少于20
+        * 已过滤
+    * 211个域名检测到恶意行为
+    * 检测率：98%
+* 评估误报率
+    * 过滤两个半月内查询次数少于20的域名（剩余300,000个域名）
+    * 17,686被检测为恶意（5.9%）
+    * 域名无标记
+        * 很难手动验证
+    * 验证
+        * Google搜索
+        * 众所周知的垃圾邮件列表
+        * 诺顿安全网站
         * McAfee Site Advisor
-    * False positive rate: 7.9%
+    * 误报率：7.9%
 
-## Limitation (Evasion)
+## 局限 (逃避检测)
 
-* Attackers have prior information about EXPOSURE
-* Assign uniform TTL values across all compromised machines
-    * Reduces attacker's infrastructure reliability
-* Reduce number of DNS lookups of malicious domain
-    * Not trivial to implement
-    * Reduces attacker's impact
-    * Requires high degree of coordination
+* 攻击者事先知道关于 EXPOSURE 的信息
+* 在所有受感染的宿主上设置统一的 TTL 值
+    * 降低攻击者的设施可靠性
+* 减少恶意域名的 DNS 查询次数
+    * 执行起来并非易事
+    * 攻击效果受影响
+    * 要协调到高度一致
 
 ## 参考资料
 

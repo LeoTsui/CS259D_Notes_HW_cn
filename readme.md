@@ -2,7 +2,7 @@
 
 **本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。**
 
-中文：[Github](https://github.com/LeoTsui/CS259D_Notes_HW_cn) [GitBook](https://leotsui.gitbooks.io/cs259d-notes-cn/) English: [GitHub](https://github.com/LeoTsui/CS259D_Notes_HW) [GitBook](https://leotsui.gitbooks.io/cs259d-notes/)
+中文：[Github](https://github.com/LeoTsui/CS259D_Notes_HW_cn) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes-cn) English: [GitHub](https://github.com/LeoTsui/CS259D_Notes_HW) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes)
 
 ---
 

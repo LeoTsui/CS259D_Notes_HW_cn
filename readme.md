@@ -2,9 +2,7 @@
 
 **本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。**
 
-Github: [CS259D_Notes_HW_cn](https://github.com/LeoTsui/CS259D_Notes_HW_cn)
-
-GitBook: [CS259D Notes cn](https://leotsui.gitbooks.io/cs259d-notes-cn/)
+中文：[Github](https://github.com/LeoTsui/CS259D_Notes_HW_cn) [GitBook](https://leotsui.gitbooks.io/cs259d-notes-cn/) English: [GitHub](https://github.com/LeoTsui/CS259D_Notes_HW) [GitBook](https://leotsui.gitbooks.io/cs259d-notes/)
 
 ---
 
@@ -14,7 +12,7 @@ GitBook: [CS259D Notes cn](https://leotsui.gitbooks.io/cs259d-notes-cn/)
     - [介绍](#%E4%BB%8B%E7%BB%8D)
     - [僵尸网络](#%E5%83%B5%E5%B0%B8%E7%BD%91%E7%BB%9C)
     - [内部威胁](#%E5%86%85%E9%83%A8%E5%A8%81%E8%83%81)
-    - [生物行为特征](#%E7%94%9F%E7%89%A9%E8%A1%8C%E4%B8%BA%E7%89%B9%E5%BE%81)
+    - [生物行为统计信息](#%E7%94%9F%E7%89%A9%E8%A1%8C%E4%B8%BA%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
     - [网络安全](#%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8)
     - [网络钓鱼检测](#%E7%BD%91%E7%BB%9C%E9%92%93%E9%B1%BC%E6%A3%80%E6%B5%8B)
     - [自动警报关联](#%E8%87%AA%E5%8A%A8%E8%AD%A6%E6%8A%A5%E5%85%B3%E8%81%94)
@@ -54,7 +52,7 @@ GitBook: [CS259D Notes cn](https://leotsui.gitbooks.io/cs259d-notes-cn/)
     * Lecture 3
     * One-class Training for Masquerade Detection (2003)
 
-### 生物行为特征
+### 生物行为统计信息
 
 * 基于行为和认知生物特征的主动认证
     * Lecture 4

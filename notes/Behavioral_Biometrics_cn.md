@@ -1,5 +1,111 @@
-# Behavioral Biometrics
+# 生物行为统计信息
 
-* Active authentication using behavioral and cognitive biometrics
-* Mouse dynamics analysis for active authentication
-* Touch and swipe pattern analysis for mobile active authentication
+<!-- TOC -->
+
+- [身份认证三大基石](#%E8%BA%AB%E4%BB%BD%E8%AE%A4%E8%AF%81%E4%B8%89%E5%A4%A7%E5%9F%BA%E7%9F%B3)
+- [生物统计信息 （人之所是）](#%E7%94%9F%E7%89%A9%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF-%EF%BC%88%E4%BA%BA%E4%B9%8B%E6%89%80%E6%98%AF%EF%BC%89)
+    - [生物生理统计信息](#%E7%94%9F%E7%89%A9%E7%94%9F%E7%90%86%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
+    - [生物行为统计信息](#%E7%94%9F%E7%89%A9%E8%A1%8C%E4%B8%BA%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
+    - [生物社交统计信息 （生物社交行为统计信息）](#%E7%94%9F%E7%89%A9%E7%A4%BE%E4%BA%A4%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF-%EF%BC%88%E7%94%9F%E7%89%A9%E7%A4%BE%E4%BA%A4%E8%A1%8C%E4%B8%BA%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF%EF%BC%89)
+- [行为统计信息分类](#%E8%A1%8C%E4%B8%BA%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF%E5%88%86%E7%B1%BB)
+- [影响实施的因素](#%E5%BD%B1%E5%93%8D%E5%AE%9E%E6%96%BD%E7%9A%84%E5%9B%A0%E7%B4%A0)
+- [参考资料](#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99)
+
+<!-- /TOC -->
+
+> 人之所是，难以隐秘。
+> 
+> <div align="right">NIST SP 800-63-2: 电子认证指南</div>
+
+## 身份认证三大基石
+
+* 人之**所知**（例如，密码）
+* 人之**所有**（例如，ID 徽章或加密密钥）
+* 人之**所是**（例如，指纹或其他生物特征数据）
+
+## 生物统计信息 （人之所是）
+
+* 尽管生物特征“可被接受”，但生物特征并非“最佳选择”
+* 难以（并非不能）
+    * 盗窃、转移
+    * 模拟、复制
+
+### 生物生理统计信息
+
+* 面部特征
+* 指纹
+* 声纹
+* 手掌几何特征
+* 虹膜图案
+* DNA
+* 多数数据采样需要侵入性设备
+* 来自文化、社会和宗教的潜在阻力
+
+### 生物行为统计信息
+
+* 用户行为建模（输入，GUI改变）
+* 应用于
+    * 用户认证
+    * 入侵检测
+* 优势
+    * 对系统可用性的影响非常小
+* 在 multi-modal systems 最为适用
+    * 更加稳健的补充方法
+    * 对实施环境高度敏感
+        * 例如，键盘
+
+### 生物社交统计信息 （生物社交行为统计信息）
+
+* 一个紧密相连的社会
+* 在一定的社会环境中，通过社交行为来识别个人或账号
+* 社交网络的属性决定了其中用户的通信模式
+* 社交行为特征
+    * 虚拟世界账户的属性
+    * 互动的环境（微博，博客，聊天）
+    * 互动的内容（主题，点赞，观点，表情，措辞/写作风格）
+    * 在线游戏的策略
+    * 沟通的模式
+* 三个开放的问题
+    * 是否可以从社交信息中提取出持久独特的特征，并用这样的特征进行个人认证？
+    * 社交信息与传统的生理、行为信息相结合有什么好处？
+    * 社交信息是否能被用于风险评估和安全威胁预防？
+
+## 行为统计信息分类
+
+* 创作者
+    * 由用户创作的文字图案
+        * 词汇，标点，笔触
+* 直接人机交互信息
+    * 硬件输入交互：键盘，鼠标，触摸
+    * 软件交互：策略，知识，技能
+* 间接人机交互信息
+    * 低级别系统活动
+        * 系统调用跟踪、日志审核、程序执行跟踪、注册表访问、存储活动、调用堆栈数据分析
+* 动力学：基于运动技能的生物识别技术
+    * 依赖于大脑，骨骼，关节，神经系统的正常运转
+* 纯粹的生物行为
+    * 行走模式，打字模式，抓握模式
+
+## 影响实施的因素
+
+* 所需的设备
+    * 不需要额外设备
+    * 多个摄像头
+    * 脑电图传感器
+* 用户登记时间
+    * 训练系统识别用户需要时间
+* 持久性
+    * 特征发生变化的时间
+* 干扰已有系统环境
+* 错误率
+    * 误拒绝率（False rejection rate，FRR）
+    * 误接受率（False acceptance rate，FAR）
+    * 等错误率（Equal error rate，ERR）：当 FRR=FAR 时的错误率
+
+## 参考资料
+
+* NIST SP 800-63-2: Electronic Authentication Guideline
+* Biometrics: A Tool for Information Security
+* Behavioural biometrics: a survey and classification
+* Emerging Trends in Security System Design Using the Concept of Social Behavioural Biometrics
+* CS 259D Lecture 4

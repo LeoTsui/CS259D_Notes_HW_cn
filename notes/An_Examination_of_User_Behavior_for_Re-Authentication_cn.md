@@ -2,383 +2,334 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-    - [Behavioral Biometrics](#behavioral-biometrics)
-    - [Behavioral Biometrics Categories](#behavioral-biometrics-categories)
-    - [Authentication](#authentication)
-    - [Re-authentication](#re-authentication)
-    - [Behavioral Biometrics (Re-)authentication](#behavioral-biometrics-re-authentication)
-- [Objective of User Re–authentication System](#objective-of-user-re%E2%80%93authentication-system)
-- [Multimodal Data Analysis](#multimodal-data-analysis)
-- [Sample Collection](#sample-collection)
-- [Data Processing and Features Extract](#data-processing-and-features-extract)
-    - [Mouse](#mouse)
-        - [Mouse Data](#mouse-data)
-        - [Mouse Feature Hierarchy](#mouse-feature-hierarchy)
-        - [Mouse Features](#mouse-features)
-    - [Keystroke](#keystroke)
-        - [Keystroke Data](#keystroke-data)
-        - [Keystroke Feature Hierarchy](#keystroke-feature-hierarchy)
-        - [Keystroke Features](#keystroke-features)
+- [背景信息和启发](#背景信息和启发)
+    - [再认证](#再认证)
+    - [生物行为信息 （再）认证](#生物行为信息-再认证)
+- [用户再认证系统的目标](#用户再认证系统的目标)
+- [多模态数据分析](#多模态数据分析)
+- [样本采集](#样本采集)
+    - [数据集 I](#数据集-i)
+    - [数据集 II](#数据集-ii)
+    - [数据集 III](#数据集-iii)
+- [数据处理和特征提取](#数据处理和特征提取)
+    - [鼠标](#鼠标)
+        - [鼠标数据](#鼠标数据)
+        - [鼠标数据层次结构](#鼠标数据层次结构)
+        - [鼠标数据特征](#鼠标数据特征)
+    - [按键](#按键)
+        - [按键数据](#按键数据)
+        - [按键特征层次结构](#按键特征层次结构)
+        - [按键数据特征](#按键数据特征)
     - [GUI](#gui)
-        - [GUI Data](#gui-data)
-        - [GUI Feature Hierarchy](#gui-feature-hierarchy)
-        - [GUI Features](#gui-features)
-    - [Summary of Feature Space](#summary-of-feature-space)
-- [Architecture](#architecture)
-- [Balance](#balance)
-- [Reference](#reference)
+        - [GUI 数据](#gui-数据)
+        - [GUI 特征层次结构](#gui-特征层次结构)
+        - [GUI 数据特征](#gui-数据特征)
+    - [特征空间总结](#特征空间总结)
+- [实施方案](#实施方案)
+- [实验](#实验)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+> 大多数事故（83%），事出内鬼，且发生在公务时间。
+> 
+> 几乎所有的银行金融业发生法的内部事故都会使机构蒙受经济损失： 30%的案件财务损失超过了50万美元。 许多机构的诸多方面都受到了损害。
+> 
+> <div align="right">美国特勤局国家威胁评估中心（NTAC），内部威胁研究（2004）</div>
 
-> Most of the incidents (83%) were executed physically from within the insider's organization and took place during normal business hours
+## 背景信息和启发
 
-> The impact of nearly all insider incidents in the banking and finance sector was a financial loss for the victim organization: in 30% of the cases the financial loss exceeded $500,000. Many victim organizations incurred harm to multiple aspects of the organization.
+### 再认证
 
-<div align="right">US Secret Service National Threat Assessment Center (NTAC), Insider threat study (2004)</div>
+* 在用户的会话进行期间持续对用户进行身份验证
+* 当前用户是否与验证的身份相同
+* 证书、凭据被盗
+* 方法
+    * 间接：分析操作系统和应用程序
+        * 系统调用、调用堆栈数据操作、程序跟踪分析
+    * 直接：分析有效的用户
+        * 命令行输入数据、按键、鼠标活动、GUI 事件
+* 处理过程
+    * 从每个用户收集干净的数据
+    * 建立每个用户正常行为的配置文件
+    * 使用配置文件来比较当前用户的行为与有效用户的行为
+    * 标记任何显着的行为差异
 
-### Behavioral Biometrics
+### 生物行为信息 （再）认证
 
-* Model user behavior(Input, GUI changes)
-* Applications
-    * User authentication
-    * Intrusion detection
-* Advantages
-    * Very low impact on usability
-* Most useful in multimodal systems
-    * Complement to more robust methods
-    * Highly sensitive to means of implementation
-        * Keyboard hardware
-* Implementation factors
-    * Required equipment
-        * None
-        * Multiple cameras
-        * EEG sensors
-    * Enrollment time
-        * Training time for system to recognize the user
-    * Persistence
-        * Time it takes for features to change
-    * Obtrusiveness
-    * Error rates
-        * False rejection rate (FRR)
-        * False acceptance rate (FAR)
-        * Equal error rate (ERR): error rate when FRR=FAR
+* 攻击者逃避传统的 IDS
+* 部署方案
+    * 开放环境
+        * 公共图书馆，网吧
+        * 无监督学习
+        * 只有来自有效用户的数据可用于分析
+    * 封闭环境
+        * 公司办公室，政府大楼
+        * 可以收集所有用户的数据
+        * 监督学习
 
-### Behavioral Biometrics Categories
+## 用户再认证系统的目标
 
-* Authorship
-    * Text or drawing made by user
-        * Vocabulary, punctuation, brush strokes
-* HCI-based biometrics
-    * Input interaction: keystrokes, mouse, haptics
-    * Software interaction: strategy, knowledge, skill
-* Indirect HCI-based biometrics
-    * Low-level system activities
-        * System call traces, audit logs, program execution traces, registry access, storage activity, call-stack data analysis
-* Kinetics: Motor-skills based biometrics
-    * Rely on proper functioning of brain, skeleton, joints, nervous system
-* Purely behavioral biometrics
-    * Walking style, typing style, gripping style
+* 计算机安全目标
+    * 设计并实现一个线上可扩展的用户再认证系统。该系统收集来自鼠标和键盘的用户输入数据，以及来自 GUI 事件的数据，并以此检测攻击者。
+* 机器学习目标
+    * 在每名用户数据量有限的情况下，利用高维时间序列数据，设计出一个准确的分类系统，以此检测入侵者。
+* 目标
+    1. 检测内部人员冒充其他内部人员；
+    1. 检测外部人员冒充内部人员；
+    1. 成对检测用户；
+    1. 在不同硬件条件下确定用户配置文件的敏感度；
+    1. 当用户行为相似时分辨用户；
+    1. 确定系统的可扩展性和计算效率;
+    1. 以分别和组合的方式，确定每个数据源(例如，鼠标、按键和GUI)的强度；
+    1. 利用数据的粒度得到综合特征空间；
+    1. 将候选特征空间减少到一个最具预判性的子集；
+    1. 在每个用户数据集的数据量有限的情况下，提高精度。
 
-### Authentication
+## 多模态数据分析  
 
-* Knowledge: password, PIN
-    * Something you know
-* Objects: ID card, credit card, access token
-    * Something you have
-* Biometrics
-    * Physiological: fingerprints, retina pattern
-        * Something you are
-        * Issues: implementation cost, acceptability, stability
-    * Behavioral: signature, gait, keystroke dynamics
-        * Something you do
+* 多数据来源
+* 合并数据来源依照以下级别
+    * 数据级别
+        * 可能会错过特征
+    * 特征级别
+        * 分类器使用的特征被打包在一起
+    * 分类器级别
+        * 每个数据源都有单独的分类器
+        * 投票确定最终决策
 
-### Re-authentication
+## 样本采集
 
-* Continuous authentication of a user for the duration of the user's login session
-* Current user same as user who authenticated
-* Stolen credentials
-* Approaches
-    * Indirect: profiling OS and applications
-        * System call invocations, call-stack data operation, program trace analysis
-    * Direct: profiling valid user
-        * Command line input data, keystroke dynamics, mouse activity, GUI events
-* Process
-    * Collect clean data from each user
-    * Build profile of normal behavior for each user
-    * Use profile to compare behavior of current user with that of a valid user
-    * Any significant behavioral difference flagged
+### 数据集 I
 
-### Behavioral Biometrics (Re-)authentication
+* 61名志愿者
+    * 任务1：
+        * 阅读任务
+        * 20道关于任务的题目
+    * 任务2：
+        * 浏览一组网页
+        * 另一组问题
+    * 平均数据收集4个小时
+        * 平均92K个数据点，每个用户4.5MB数据
 
-* Evade classical IDS
-* Deployment scenarios
-    * Open setting
-        * Public library, internet cafe
-        * Unsupervised learning
-        * Only data from valid user available for profiling
-    * Closed setting
-        * Corporate office, government building
-        * Possible to collect data from all users
-        * Supervised learning
+### 数据集 II
 
-## Objective of User Re–authentication System
+* 一个用户，五个不同的计算机和输入输出配置
+* 和数据集 I 的任务相同
 
-* Computer Security Objective
-    * To design and implement an on–line, scalable user re–authentication system founded on the data collected from user's inputs (mouse and keyboard) and Graphical User Interface (GUI) events for the purpose of detecting an attacker.
-* Machine Learning Objective
-    * To design an accurate, classification system for detecting outliers (e.g., intruders) in high dimensional temporal sequence data when the amount of data per user is limited
-* Goal
-    1. Detect insiders pretending to be other insiders;
-    2. Detect outsiders pretending to be insiders;
-    3. Discriminate users in a pair–wise sense;
-    4. Determine the sensitivity of user profiles on different hardware configurations;
-    5. Discriminate users when they are behaving in an identical manner;
-    6. Determine the degree of system's scalability and computational efficiency;
-    7. Determine the strength of each data source (e.g., the mouse, keystrokes and GUI) individually and in combination;
-    8. Exploit granularity of the data to obtain a comprehensive feature space;
-    9. Reduce the candidate feature space to a subset of most predictive features;
-    10. Improve the accuracy measure when the amount of data per user dataset is limited.
+### 数据集 III
 
-## Multimodal Data Analysis
+* 73名志愿者执行相同的任务
+* 和数据集 I 相比
+    * 没有暂停时间
+    * I/O 事件体积更小，也更紧密
 
-* Combine sources at
-    * Data level
-        * Can miss on characteristics
-    * Feature level
-        * Classifier using all features put together
-    * Classifier level
-        * Separate classifier per data source
-        * Voting scheme for final decision
+## 数据处理和特征提取
 
-## Sample Collection
+* 直接配置有效的用户
+* 按键
+* 鼠标移动
+* GUI事件
+* 数据点（格式）
+    * 事件ID（由操作系统分配）
+    * 屏幕坐标 X
+    * 屏幕坐标 Y
+    * 系统时间
+    * 应用程序
+        * 不算做特征
 
-* 61 volunteers
-    * Task 1:
-        * Reading assignment
-        * 20 questions about assignment
-    * Task 2:
-        * Set of web pages
-        * Another set of questions
-    * Average 4 hours of data collection
-        * Average 92K data points, 4.5MB per user
+### 鼠标
 
-## Data Processing and Features Extract
+#### 鼠标数据
 
-* Directly profile valid users
-* Keystrokes
-* Mouse movements
-* GUI events
-* Data point (format)
-    * Event ID (assigned by OS)
-    * X screen coordinates
-    * Y screen coordinates
-    * System time
-    * Application
-        * Not be used as Feature
+* 所有 Windows 鼠标事件
 
-### Mouse
+#### 鼠标数据层次结构
 
-#### Mouse Data
+* 鼠标
+    * 非客户移动
+    * 鼠标事件
+        * 点击
+            * 单击
+            * 双击
+        * 滚轮
+    * 鼠标移动
+*  用户区域：菜单和工具栏下面的应用程序窗口区域
+*  用户区域鼠标移动的速率
+    * 每秒有几百个动作
+    * 数据太多，没有收集全部数据
+    * 如果光标位置改变，则每隔100 ms记录一次
+*  单击和双击
+    * 最不常见的鼠标事件
+    * 更高的精度没有帮助
+    * 没有记录按压持续时间
 
-* All Windows mouse events
+#### 鼠标数据特征
 
-#### Mouse Feature Hierarchy
+* 鼠标事件特征
+    * 一个窗口 W 个数据点
+        * 每个鼠标事件类别和子类别的事件数量
+            * 从两个后续事件或由K个数据点（相同类别或子类别的事件）分隔的两个事件提取的其他特征
+                * 为每个用户和事件类型提供一个参数 k
+    * 特征：以下信息的，均值，标准差，偏斜度
+        * 距离
+        * 速度 = 距离(P,Q)/时间(P,Q)
+        * 方位角度
+        * X 坐标
+        * Y 坐标
+        * N-graph 持续时间 （n取值从1到8）
+            * 第一个和第N个数据点之间的经过时间
+    * 共200个特征
+* 鼠标移动特征
+    * 非用户移动特征
+        * 类似于事件特征
+        * 计算距离，速度，角度等
+            * 在两个后续的非用户移动之间
+            * 两个非用户移动被K个数据点相隔
+        * 共40个特征
+    * 用户区域移动
+        * 类似于非用户移动特征
+        * 共40个特征
 
-* Mouse
-    * NC Moves
-    * Mouse Events
-        * Clicks
-            * Single
-            * Double
-        * Wheel
-    * Mouse Moves
-*  Client area: area of application window below the menu and toolbars
-*  Rate of client area mouse movements
-    * several hundred movements per second
-    * Too large, did not collect all movements
-    * Recorded every 100ms if & only if cursor position changed
-*  Single & double clicks
-    * Most infrequent events
-    * Higher granularity not helpful
-    * Not record press duration
+### 按键
 
-#### Mouse Features
+#### 按键数据
 
-* Mouse event features
-    * Over a window of W data points
-        * \# of events in each mouse category & subcategory
-            * Other features extracted from two subsequent events or two events separated by K data points (events of same category or subcategory)
-                * K a parameter for each user and type of event
-    * Features: Mean, SD, skewness (3 rd moment) of
-        * Distance
-        * Speed = distance(P,Q)/time(P,Q)
-        * Angle of orientation
-        * X coordinate
-        * Y coordinate
-        * N-graph duration (N between 1-8)
-            * Elapsed time between first & Nth data point
-    * Total of 200 features
-* Mouse movements features
-    * NC moves features
-        * Similar to event features
-        * Distance, speed, angle, etc. computed
-            * between two subsequent NC moves
-            * two NC moves separated by K data points
-        * Total of 40 features
-    * Client area moves
-        * Similar to NC mouse movement features
-        * Total of 40 features
+* Windows 中有两种按键类型
+    * `WM_KEYDOWN`
+    * `WM_KEYUP`
+    * 按键信息有唯一的 ID 表示
 
-### Keystroke
+#### 按键特征层次结构
 
-#### Keystroke Data
+* 按键
+    * 功能键
+        * 例如：F1-F12
+    * 控制键
+        * 例如：Control，Alt，Delete
+    * 打字键
+        * 子母
+        * 数字
+    * 编辑键
+        * 例如：Page Up/Down，Tab，方向键
+    * 其他
+        * 例如：标点，Pause/Break，PrtSc/SysRq
 
-* Two types in Windows OS
-    * WM_KEYDOWN
-    * WM_KEYUP
-    * Event ID uniquely identifying the key
+#### 按键数据特征
 
-#### Keystroke Feature Hierarchy
-
-* Keystroke
-    * Function
-        * Example: F1-F12
-    * Control
-        * Example: Control, Alt, Delete
-    * Regular
-        * Letters
-        * Numbers
-    * Mouse-key
-        * Example: Page Up/Down, Tab, arrow keys
-    * Other
-        * Example: punctuation keys, Pause/Break, PrtSc/SysRq
-
-#### Keystroke Features
-
-*  Over a window of W data points
-    * \# of events in each category & subcategory
-    * \# of occurrences of each letter & each numeral
-        * 26 alphabet features, 10 numeric features
-    * Mean, stdv, skewness
-        * N-graph duration between consecutive keystrokes
-        * N between 1-8
-    * Total of 236 features
+* 一个窗口 W 个数据点
+    * 每个类别和子类别的事件数量
+    * 每个字母和每个数字的出现次数
+        * 26个字母特征，10个数字特征
+    * 以下信息的，均值，标准差，偏斜度
+        * N-graph 持续时间 （n取值从1到8）
+    * 共236个特征
 
 ### GUI
 
-#### GUI Data
+#### GUI 数据
 
-* Data induced by 138 GUI events
-* Grouped into a hierarchy based on function
+* 由138个 GUI 事件引发的数据
+* 根据特征分为等级
 
-#### GUI Feature Hierarchy
+#### GUI 特征层次结构
 
 * GUI
-    * Temporal and spatial
-        * Window
-            * Scroll bar, minimize, maximize, restore, move, etc.
-        * Control
-            * Application & process control, open/close, etc.
-        * Menu
-            * Open, select, navigate, close, etc.
-        * Item
-            * List, button, etc.
-    * Temporal
-        * Icon
-        * Dialog
-        * Query
-        * Combo box
-            * Open/close, select, move, resize, etc.
-        * Miscellaneous
-            * Power up/down, language change, background color change, etc.
+    * 空间上
+        * 窗口
+            * 滚动条、最小化、最大化、还原、移动等
+        * 控制
+            * 应用程序、进程控制、打开/关闭等
+        * 菜单
+            * 打开、选择、导航、关闭等
+        * 项目
+            * 列表、按钮等
+    * 时间上
+        * 图标
+        * 对话
+        * 查询
+        * 组合框
+            * 打开/关闭、选择、移动、调整大小等
+        * 杂项
+            * 通电/断电、语言更改、背景颜色更改等
 
-#### GUI Features
+#### GUI 数据特征
 
-* Spatial features
-    * Over a window of W data points
-        * \# of events in each spatial category
-        * Subsequent spatial events or spatial events separated by K data points
-            * Mean, stdv, skewness
-            * Distance
-            * Speed
-            * Angle of orientation
-            * X coordinate
-            * Y coordinate
-            * N-graph duration (N between 1-8)
-        * Total of 200 features
-* Temporal features
-    * Over a window of W data points
-        * \# of events in each temporal category
-        * Subsequent spatial events or spatial events separated by K data points
-            * Mean, stdv, skewness
-            * N-graph duration (N between 1-8)
-        * Total of 240 features
+* 空间特征
+    * 一个窗口 W 个数据点
+        * 每个空间类别的事件数量
+        * 后续的空间事件或由K个数据点分隔的空间事件
+            * 均值，标准差，偏斜度
+            * 距离
+            * 速度
+            * 方位角
+            * X坐标
+            * Y坐标
+            * N-graph 持续时间 （n取值从1到8）
+        * 共200个特征
+* 时间特征
+    * 一个窗口 W 个数据点
+        * 每个时间类别的事件数量
+        * 后续的时间事件或由K个数据点分隔的时间事件
+            * 均值，标准差，偏斜度
+            * N-graph 持续时间 （n取值从1到8）
+        * 共240个特征
 
-### Summary of Feature Space
+### 特征空间总结
 
-* Window size W: for each user
-    * Tested: 100, 300, 500, 1000
-    * Chosen: 500
-* Frequency K: for each user & subcategory
-    * Tested: 1, 5, 10, 15, 20
-    * Chosen: 8 for frequent events, 1 otherwise
-        * Frequent: induced > 10 times per second
-        * Frequent events
-            * All mouse events
-            * Mouse movements
-            * Mouse wheel movements
-            * NC mouse movements
-            * All GUI events
-            * Spatial+Temporal
-            * Temporal
-            * Window
-            * Dialog
-* Candidate feature space: 956 dimensions
-* Hierarchical groupings improve performance
-    * Removing features from lower levels of mouse hierarchy lowered classifier performance
+* 每个用户，窗口大小 W
+    * 尝试：100,300,500,1000
+    * 选择：500
+* 每个用户每个子类别，频率 K
+    * 尝试：1，5，10，15，20
+    * 选择：频繁事件为8，否则为1
+        * 频繁程度：大于十次每秒
+        * 频繁事件
+            * 所有鼠标事件
+            * 鼠标移动
+            * 鼠标滚轮事件
+            * 非用户鼠标移动
+            * 所有 GUI 时间
+            * 空间+时间
+            * 时间
+            * 窗口
+            * 对话框
+* 候选特征空间维度：956
+* 分层可以提高性能
+    * 从较低级别的鼠标层次结构中删除特征，使得分类器的性能降低
 
-## Architecture
+## 实施方案
 
-* Process
-    * Collect clean data from each user
-    * Build profile of normal behavior for each user
-    * Use profile to compare behavior of current  user with that of a valid user
-    * Any significant behavioral difference flagged
-* Implementation schemes
-    * Two schemes
-        * 1.Classify one feature vector instance at a time
-            * C4.5
-            * If the instance matched normal profile, serve request
-            * Else, alert sys admin, ask re-auth, or close session
-            * May cause high false alarm rates
-        * 2.Smoothing
-            * Look at a window of n (n between 1-11) feature vector instances
-            * If m (m between 1,n) of those matched profile, serve request
-            * Overlapping windows
-            * W-s old points, s new points
-            * s = 50, equivalent to 5 second intervals
-            * Reduces time-to-alarm
-    * False bell rate
-    * Evaluation
-        * 10-fold cross validation
-* Experimental
-    * Pairwise Discrimination
-        * Discriminate normalcy
-    * Anomaly Detection
-        * Detect an insider pretending to be another insider
-    * Unseen User Detection
-        * Detect an outsider pretending to be an insider
+1. 一次分类一个特征向量实例
+    * C4.5
+    * 如果实例匹配正常配置文件，则服务其请求
+    * 否则，通知系统管理员，要求重新验证或关闭会话
+    * 可能导致高误报率
+1. 平滑
+    * 查看n（n介于1到11）个特征向量实例的一个窗口
+    * 如果m（m介于1到n）个实例匹配正常配置文件，则服务其请求
+    * 重叠滑动窗口
+    * W-s 个旧数据点， s 个新数据
+    * 如果 s = 50，相当于间隔5秒
+    * 减少发出报警时间
+* 假警铃率
+    * 警铃（bell），在没有终端的正常窗口中，连续的警报序列
+    * 假警铃率（false bell rate) = 假警铃数 / 警报数
+* 验证
+    * 10-fold CV
 
-## Balance
+## 实验
 
-* Accuracy
-* Efficiency
-* Scalability
+* 两两辨识
+    * 辨别正常用户
+* 异常检测
+    * 检测内部人员冒充其他内部人员
+* 检测看不见的用户
+    * 检测冒充内部人员的冒充者
+* 跟踪合法用户
+    * 在不同的硬件设备上识别同一的合法用户
 
-## Reference
+## 参考资料
 
 * An examination of user behavior for re- authentication (M. Pusara's PhD thesis, 2007)
 * CS 259D Lecture 4

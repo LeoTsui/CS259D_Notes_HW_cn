@@ -2,235 +2,240 @@
 
 <!-- TOC -->
 
-- [Background Knowledge](#background-knowledge)
-- [Goal and Contribution](#goal-and-contribution)
-- [Data(Mouse Behavior Data)](#datamouse-behavior-data)
-    - [Data Source](#data-source)
-    - [Mouse Behavior Analysis](#mouse-behavior-analysis)
-    - [Mouse Behavior Pattern Mining](#mouse-behavior-pattern-mining)
-        - [Clarifying Questions](#clarifying-questions)
-        - [Mining Method](#mining-method)
-        - [Reference-Behavior Pattern Generation and Matching](#reference-behavior-pattern-generation-and-matching)
-        - [Behavior Pattern Analysis](#behavior-pattern-analysis)
-- [Feature](#feature)
-- [Detection](#detection)
-- [Limitation](#limitation)
-- [Reference](#reference)
+- [背景知识](#背景知识)
+- [论文目标和贡献](#论文目标和贡献)
+- [数据（鼠标行为数据）](#数据鼠标行为数据)
+    - [数据来源](#数据来源)
+    - [鼠标行为分析](#鼠标行为分析)
+    - [鼠标行为模式挖掘](#鼠标行为模式挖掘)
+        - [标记定义](#标记定义)
+        - [数据挖掘方法](#数据挖掘方法)
+        - [行为模式参考的生成与匹配](#行为模式参考的生成与匹配)
+        - [行为模式分析](#行为模式分析)
+- [特征](#特征)
+    - [从挖掘到的模式中构造特征](#从挖掘到的模式中构造特征)
+    - [特征实例研究](#特征实例研究)
+- [实施检测](#实施检测)
+- [局限性](#局限性)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge
+## 背景知识
 
-* User Authentication Mechanism
-    * Only at the initial login session
-    * Continuous (re)authentication
-        * Passive
-        * Transparent to users
-            * No hit on usability
-* Mouse dynamics
-    * Intrinsic behavioral variability
-        * Intrinsic human factors
-            * Biological or emotional status of the user
-        * External environmental variables
-            * Software environment, task, interaction mode
-    * No enough data for malicious users
-    * No public data set in mouse dynamics research
-* Hypothesis
-    * Observation:
-        * Measurements extracted from these behavior patterns 
-        * $$\to$$ More stable than those from holistic behavior
-    * Assumption:
-        * Frequent behavior segments in mouse behavior
-        * $$\to$$ Provide more stable and discriminative features or measurements
-        * $$\to$$ Allow one to more accurately characterize the discriminable components of mouse behavior.
-* One-Class Classification
-    * Only legitimate user patterns are available
-    * Useing both the legitimate user's and impostors' samples is not practical
-        * Too much impostors' samples in realistic applications
+* 用户验证机制
+    * 只在最初的登录会话时验证
+    * 持续多次（重新）验证
+        * 被动验证
+        * 对用户透明
+            * 不影响使用体验
+* 鼠标动力学
+    * 内在行为变量
+        * 内在的人为因素
+            * 用户的生理或情感状态
+        * 外部环境因素
+            * 软件环境、任务、交互模式
+    * 缺乏恶意用户的数据
+    * 没用公开的鼠标动力学数据
+* 鼠标行为模式
+    * 经常**重复**对的行为片段
+    * **固定**的连续操作序列
+* 猜想
+    * 观察到
+        * 从行为模式中提取的测量方法比用整体的行为中提取的要好
+    * 假设
+        * 固定重复的行为模式
+            * 提供了更加稳定可以区分的特征和测量方法
+            * 允许更精确地从鼠标行为的可辨别组分中提取特征
+* 单一分类
+    * 只有合法用户模式可以获得
+    * 同时使用合法用户和伪装用户训练分类器并不现实
+        * 在实际操作中，伪装用户不可胜数
 
-## Goal and Contribution
+## 论文目标和贡献
 
-* Using a pattern-growth­ based mining method to extract frequent-behavior segments
-* One-class classification
-* Established a new mouse behavioral data set
-* Develop a simple and efficient continuous user authentication method.
+* 使用基于模式增长的数据挖掘方法来提取**固定重复的鼠标行为模式**
+* 单一分类器
+* 建立一个鼠标行为数据集
+* 开发一个简单高效的用户持续验证方法
 
-## Data(Mouse Behavior Data)
+## 数据（鼠标行为数据）
 
-### Data Source
+### 数据来源
 
-* Set an experimental environment
-* Same computer hardware configuration
-* All users are college students(Some people majoring in computer science)
-* 28 participants
-    * ~90,000 mouse actions/user
-    * 30 sessions
-        * Each 30 minute
-        * Internet surfing, word processing, online chatting,programming, online gaming
-        * Between 30-60 days per participant
-* Data record
-    * Event type (e.g., mouse move/click), position,timestamp, application information
+* 设定实验环境
+* 相同的电脑配置
+* 所有的用户都是大学生（有些人的专业是计算机科学）
+* 28 名参与者
+    * 每用户大约90,000个鼠标动作
+    * 30 次会话
+        * 每次30分钟
+        * 上网冲浪，文字处理，在线聊天，编程，在线游戏
+        * 每个参与者记录30-60天
+* 数据记录
+    * 事件类型（例如，鼠标移动/点击），位置，时间戳，应用程序信息
 
-### Mouse Behavior Analysis
+### 鼠标行为分析
 
-* Mouse events
-    * System messages sent to receiving applications
-        * Inform current cursor position & mouse button status
-    * Types
-        * Mouse Down
-        * Mouse Up
-        * Mouse Wheel
-        * Mouse Move
-* Mouse actions
-    * Single click
-        * Mouse down followed by mouse up
-    * Double click
-        * Mouse down, up, down, up
-    * Common movement
-        * General mouse movement with no clicks
-    * Point and click movement
-        * Mouse movement followed by single/double click
-    * Drag and drop movement
-        * Mouse down, movement, mouse up
-    * Silence
-        * No mouse operation
-* Encoded **Mouse action** into **Mouse operation**
-* Mouse operation
-    * Truple:
+* 鼠标事件
+    * 系统消息发送到接收应用程序
+        * 通知当前光标位置和鼠标按钮状态
+    * 类型
+        * `Mouse Down`
+        * `Mouse Up`
+        * `Mouse Wheel`
+        * `Mouse Move`
+* 鼠标动作
+    * 单击
+        * 按下鼠标，然后将松开鼠标
+    * 双击
+        * 按下、松开、按下、松开
+    * 普通运动
+        * 普通移动，没有点击
+    * 指向并点击
+        * 移动，然后单击/双击
+    * 拖放动作
+        * 按下，移动，松开
+    * 沉默
+        * 无操作
+* 把**鼠标动作**记录为**鼠标操作**
+* 鼠标操作
+    * 记录元组：
         * `<action-type, application-type, screen-area, window-position, timestamp>`
-* Mouse-Behavior pattern: recurring & fixed segments
-    * Micro-habitual patterns
-        * Subconscious/habitual factors urging GUI interactions
-    * Task-intended patterns
-        * Operating habits under certain applications (e.g., using certain function of an application)
-        * Example: creating a new document in a word processing app
+* 鼠标行为模式：**固定重复的鼠标行为模式**
+    * 细微习惯行为模式
+        * 刺激GUI交互的潜意识/习惯性因素
+    * 有计划的任务中的行为模式
+        * 特定应用程序的操作习惯（例如，使用应用程序的特定功能）
+            * 例如：在文字处理应用程序中创建新文档
 
-### Mouse Behavior Pattern Mining
+### 鼠标行为模式挖掘
 
-#### Clarifying Questions
+#### 标记定义
 
-* $$I = \{i_1 , i_2, ..., i_n\}$$ a set of all mouse operations
-* $$\mathrm{operation}\text{-}\mathrm{set}$$: a set of mouse operations
-    * Example: $$\{(1,3,4,0), (2,1,4,0), (3,1,4,0)\}$$
-* $$s$$, sequence: ordered list of operation sets by user ID and timestamp
-    * $$s = \{s_1, s_2, ..., s_k\}$$, each $$s_j$$
-        * An $$\text{operation-set}$$ (subset of $$I$$), $$s_j \subset I$$, for $$1 \leq j \leq l$$
-        * Called an element of sequence $$s$$
-        * $$s_j = \langle x_1, x_2, ..., x_m \rangle$$, each $$x_k$$ a mouse operation
-    * Example:
+* $$I = \{i_1 , i_2, ..., i_n\}$$， 所有鼠标操作的集合
+* $$\mathrm{operation}\text{-}\mathrm{set}$$: 一个鼠标操作集
+    * 例如：$$\{(1,3,4,0), (2,1,4,0), (3,1,4,0)\}$$
+* $$s$$，按照用户 ID 和时间戳排序的序列
+    * $$s = \{s_1, s_2, ..., s_k\}$$，其中每个 $$s_j$$
+        * 一个 $$\text{operation-set}$$ (subset of $$I$$), $$s_j \subset I$$，其中 $$1 \leq j \leq l$$
+        * 被称为序列 $$s$$ 的一个元素
+        * $$s_j = \langle x_1, x_2, ..., x_m \rangle$$，其中每个 $$x_k$$ 是一个鼠标怕操作
+    * 例如：
         * $$s = \{\langle(1,3,4,0)\rangle, \langle(1,3,4,0), (2,1,4,0), (3,1,4,0)\rangle, \langle(2,1,2,1)\rangle\}$$
         * $$\mathrm{length}(s) = 5$$
-* $$\alpha$$, a subsequence of $$s$$
-    * Example
-        * $$\{\langle(1,3,4,0)\rangle\}$$ is a subsequence of $$\{\langle(1,3,4,0), (2,1,4,0), (3,1,4,0)\rangle\}$$
-* $$L$$, length of sequence: the number of mouse operation instances
-    * $$\text{L-sequence}$$: A sequence of length $$L$$
-* $$S$$, a mouse operation sequence database
-    * A set of triples $$\langle ID, sid, s \rangle$$
-        * $$ID$$, the user ID
-        * $$sid$$, a sequence $$ID$$
-        * $$s$$, a sequence
-* $$\mathrm{Support_S} (\alpha)$$ = $$\#$$ tuples in databases $$S$$ that contain $$\alpha$$
-* Sequential pattern: $$\mathrm{Support_S} \geq \xi$$
-    * $$\xi$$ a given threshold
-* **Problem Statement**
-    * The problem of sequential mouse behavior pattern mining is:
-        * Input
-            * Mouse operation sequence $$S$$
-            * minimun support threshold $$\xi$$
-        * Output
-            * Complete set of all frequent mouse behavior patterns in $$S$$
+* $$\alpha$$，$$s$$ 的一个子序列
+    * 例如：
+        * $$\{\langle(1,3,4,0), (2,1,4,0), (3,1,4,0)\rangle\}$$ 的子序列是 $$\{\langle(1,3,4,0)\rangle\}$$
+* $$L$$，序列长度：鼠标操作实例的个数
+    * $$\text{L-sequence}$$：长度为 $$L$$ 的序列
+* $$S$$，鼠标操作序列数据库
+    * 元组 $$\langle ID, sid, s \rangle$$ 的集合
+        * $$ID$$，用户 ID
+        * $$sid$$，$$ID$$ 的序列
+        * $$s$$， 序列
+* $$\mathrm{Support_S} (\alpha)$$ = 数据集 $$S$$ 中包含 $$\alpha$$ 的元组的数量
+* $$\mathrm{Support_S} \geq \xi$$ 可被称为序列模型
+    * $$\xi$$ 一个给定的阈值
+* **问题陈述**
+    * 鼠标行为模式挖掘是
+        * 输入
+            * 鼠标操作序列 $$S$$
+            * 设定最小阈值 $$\xi$$
+        * 输出
+            * $$S$$ 中所有固定重复的鼠标行为模式的完整集合
 
-#### Mining Method
+#### 数据挖掘方法
 
 * PrefixSpan
     * Mining Sequential Patterns by Pattern­ Growth: The PrefixSpan Approach (2004)
-    * Project the database into a set of smaller databases
-        * Based on set of patterns mined so far
-    * Mine locally frequent patterns in each projected database
+    * 将数据库映射到一组较小的数据库中
+        * 基于已经取得的模式
+    * 在每个已映射的数据空中挖掘本地重复模式
 
-#### Reference-Behavior Pattern Generation and Matching
+#### 行为模式参考的生成与匹配
 
-* "Baseline" normal behavior pattern generation
-    * For each user
-        * Mine behavior patterns from each session
-        * Collect all patterns as reference behavior pattern
-* Pattern matching
-    * Given a new operation sequence match against mined patterns
-        * Search patterns
-        * Output all matching patterns
+* 创建"基线"，由正常行为模式生成
+    * 对于每个用户
+        * 从每次会话中挖掘行为模式
+        * 收集所有模式作为行为模式参考
+* 模式匹配
+    * 一个给定的新操作序列与已挖掘出的序列相配
+        * 搜索已有模式
+        * 输出所有匹配模式
 
-#### Behavior Pattern Analysis
+#### 行为模式分析
 
-* Set minimum support $$8\%$$
-    * Trade-off value
+* 设置最小 support 值为 $$8\%$$
+    * 以此权衡最小 support 和真是有效的行为模式
 
-## Feature
+## 特征
 
-`Frequent-behavior patterns cannot be used directly`
+* 固定重复的行为特征无法被直接使用
 
-* Feature Construction from Mined Pattern
-    * Click elapsed time
-        * Time spent by user to perform a click action
-        * Single click: $$\mathrm{mean}$$, $$\mathrm{stdv}$$ of overall time
-        * Double click: $$\mathrm{mean}$$, $$\mathrm{stdv}$$ of overall & 3 interval times
-    * Movement speed
-        * Average movement speed for different types of mouse movement
-        * 24 types: 8 directions, 3 distance ranges
-    * Movement acceleration
-        * Average acceleration for different types of mouse movement
-        * Similar to movement speed
-    * Relative position of extreme speed
-        * Example: 0.5 for middle position of movement speed curve
-    * **Total: 92 features**
-        * 20 click-related features
-        * 24 movement-related features
-            * Only from common & point-and-click movements
-        * 24 acceleration-related features
-        * 24 extreme-speed-related features
-* Empirical Feature Study
-    * Stability of Features in Behavior Pattern
-        * Feature can be skewed by
-            * Environmental variables
-            * Human factors
-        * Example
-            * Finding documents
-        * Kernel density estimation
-            * a non-parametric way of estimating the probability density function (PDF) of a random variable
-        * Compute PDF for each feature
-            * Behavior patterns
-            * holistic behavior
-    * Discriminability of Features in Behavior Patterns
-        * The features extracted from behavior pattern evidently superior to those extracted from holistic behavior
-    * Statistical Dispersion of Features Across Subjects
+### 从挖掘到的模式中构造特征
 
-## Detection
+* 点击时间
+    * 用户执行点击操作花费的时间
+    * 单击：总时间的平均值，标准差
+    * 双击：总时间，以及三个间隔的平均值，标准差
+* 运动速度
+    * 不同类型的鼠标移动的平均速度
+    * 24种类型：8个方向，3个距离范围
+* 运动加速度
+    * 不同类型鼠标移动的平均加速度
+    * 与运动速度类似
+* 最大速度在速度曲线上的相对位置
+    * 例如：0.5 意味着最大速度出现在运动轨迹的中间
+* **总共92个特征**
+    * 20个点击相关的特征
+    * 24个运动相关的特征
+        * 只包含普通运动和指向并点击
+    * 24个加速度相关的特征
+    * 24个最大速度相关的特征
 
-* Nearest-Neighbor
+### 特征实例研究
+
+* 行为模式特征的稳定性
+    * 特征的偏斜可能来自
+        * 环境因素
+        * 人为因素
+    * 例子
+        * 查找文档（不确定文档在哪）
+    * 核密度估计
+        * 一种无参数估计随机变量概率密度函数的方法
+    * 计算每个特征的概率密度函数，特征来自
+        * 行为模式
+        * 整体行为
+* 从行为模式中判别特征
+    * 从行为模式中提取出的特征确实优于整体行为中提取的特征
+        * 更稳定
+        * 更可辨
+* 特征跨项目的统计分布
+
+## 实施检测
+
+* 邻近算法
     * $$k = 3$$
-    * Anomaly score
-        * Mahalanobis distance between test & training feature vectors
-* Neural Network
-    * Single hidden layer
-        * Input nodes, $$p$$
-        * Hidden nodes, $$\lfloor2p/3\rfloor$$
-        * Output node, $$1$$
-    * Train with every input feature vector & output $$=1.0$$
-    * Test-vector fed into network, output $$\sim$$ $$1.0$$ or $$-1.0$$
-* One-class SVM
+    * 异常分数
+        * 训练和测试特征向量之间的 Mahalanobis 距离
+* 神经网络
+    * 单一隐藏层
+        * 输入神经元，$$p$$
+        * 隐藏神经元，$$\lfloor2p/3\rfloor$$
+        * O输出神经元，$$1$$
+    * 用每一个输入特征向量训练检测器使得输出为1.0
+    * 测试向量输入神经网络，输出值大约为 1.0 或 -1.0
+* 单分类 SVM
     * RBF kernel
 
-## Limitation
+## 局限性
 
-* Since
-    * Samples are only come from the college
-    * No impostors' samples
-    * One-class classification
-* $$\Rightarrow$$ For every time to deploy this user authentication method need to
-    * Collect new samples
-    * Traning
+* 样品仅采样自特定的机构（大学）
+* 没有攻击者的样本
+*  每次部署都需要收集数据和训练模型
 
-## Reference
+## 参考资料
 
 * Continuous Authentication for Mouse Dynamics: A Pattern-Growth Approach (C. Shen et al., 2012)
 * CS 259D Lecture 5

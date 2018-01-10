@@ -8,7 +8,7 @@
 - [收集训练数据](#收集训练数据)
 - [特征](#特征)
     - [基于时间的特征](#基于时间的特征)
-        - [变化点检测 （Change Point Detection， CPD）](#变化点检测-change-point-detection-cpd)
+        - [变化点检测（Change Point Detection， CPD）](#变化点检测change-point-detection-cpd)
         - [检测每日近似行为](#检测每日近似行为)
     - [基于 DNS 应答的特征](#基于-dns-应答的特征)
     - [基于 TTL 的特征](#基于-ttl-的特征)
@@ -127,7 +127,7 @@
     * 访问比例
         * 空闲还是热门
 
-#### 变化点检测 （Change Point Detection， CPD）
+#### 变化点检测（Change Point Detection， CPD）
 
 * 运作于时间序列之上
 * 目标是找到那些数据值突然改变的点

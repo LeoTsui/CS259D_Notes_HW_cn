@@ -2,159 +2,162 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Goal](#goal)
-- [Data](#data)
-    - [Data Source](#data-source)
-    - [Data Processing](#data-processing)
-- [Feature(Metrics)](#featuremetrics)
-- [Mouse Movement Characterization](#mouse-movement-characterization)
-    - [Dependence on different platforms](#dependence-on-different-platforms)
-    - [Distance Between Distributions](#distance-between-distributions)
-    - [Number of Mouse Clicks in a Real Session](#number-of-mouse-clicks-in-a-real-session)
-- [Classifier](#classifier)
-- [Limitation](#limitation)
-- [Reference](#reference)
+- [背景信息和启发](#%E8%83%8C%E6%99%AF%E4%BF%A1%E6%81%AF%E5%92%8C%E5%90%AF%E5%8F%91)
+- [论文目标](#%E8%AE%BA%E6%96%87%E7%9B%AE%E6%A0%87)
+- [数据](#%E6%95%B0%E6%8D%AE)
+    - [数据来源](#%E6%95%B0%E6%8D%AE%E6%9D%A5%E6%BA%90)
+    - [数据处理](#%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86)
+- [特征（度量）](#%E7%89%B9%E5%BE%81%EF%BC%88%E5%BA%A6%E9%87%8F%EF%BC%89)
+- [鼠标运动特征](#%E9%BC%A0%E6%A0%87%E8%BF%90%E5%8A%A8%E7%89%B9%E5%BE%81)
+    - [受不同平台的影响](#%E5%8F%97%E4%B8%8D%E5%90%8C%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%BD%B1%E5%93%8D)
+    - [分布间的距离](#%E5%88%86%E5%B8%83%E9%97%B4%E7%9A%84%E8%B7%9D%E7%A6%BB)
+    - [实际会话中的鼠标点击次数](#%E5%AE%9E%E9%99%85%E4%BC%9A%E8%AF%9D%E4%B8%AD%E7%9A%84%E9%BC%A0%E6%A0%87%E7%82%B9%E5%87%BB%E6%AC%A1%E6%95%B0)
+- [分类](#%E5%88%86%E7%B1%BB)
+- [局限](#%E5%B1%80%E9%99%90)
+- [参考资料](#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景信息和启发
 
-* User verification need
-    * More frequent
-    * Passive
-    * Transparent to users
-* behavioral biometrics approaches
-    * Fingerprints retinal scan
-        * Specialized hardware
-            * Expensive
-            * Unavailable
-    * Keystroke
-        * Record sensitive user information
-            * Username
-            * Password
-        * Complex structure
-* Angle-based metrics
-    * Independent of the operating environment
+* 再验证系统
+    * 准确
+    * 快速响应
+    * 用户行为信息难以伪造
+* 频繁的用户验证应当
+    * 被动
+    * 对用户透明
+* 一些生物行为信息验证方法的缺点
+    * 指纹、视网膜扫描
+        * 专门的硬件
+            * 昂贵
+            * 不易获得
+    * 键盘操作
+        * 记录敏感用户信息
+            * 用户名
+            * 密码
+        * 结构复杂（形状，尺寸，布局）
+* 角度测量
+    * 缩短验证时间
+    * 高准确率
+    * 独立于操作环境
 
-## Goal
+## 论文目标
 
-* A new user verification system using mouse dynamics
-    * Accuracy
-    * Quick response
-    * Difficult to forge
-* A Novel measurement strategy
-    * Angle-based metrics
-* An experiment involving sessions from over 1,000 unique users
+* 新测量标准，角度测量
+* 1000多个独立用户会话的实验
 
-## Data
+## 数据
 
-### Data Source
+### 数据来源
 
-* Two data sets
-    * Controllable environment
-        * Controllable set
-        * 30 users
-            * Different backgrounds
-    * Online forum(field)
-        * field set
-        * 1000 real field users
-        * Recorded by JaveScript code
-* Raw data movement
-    * `<ACTION-TYPE, t, x, y>`
-        * `ACTION-TYPE`, {mouse-move, mouse-click}
-        * `t`,  timestamp of the mouse action, collected in milliseconds
-        * `x`, `y`, coordinate
+* 两个数据集
+    * 受控的环境
+        * 控制集
+        * 30名用户
+            * 背景各异
+    * 线上论坛
+        * 野外集
+        * 1000名真实用户
+        * 用 JaveScript 脚本记录
+* 原始数据
+    * $$\langle \textrm{ACTION-TYPE}, t, x, y \rangle$$
+        * $$\textrm{ACTION-TYPE}$$，{鼠标移动，鼠标点击}
+        * $$t$$，鼠标动作的时间戳，以毫秒为单位记录
+        * $$x$$, $$y$$，坐标
 
-### Data Processing
+### 数据处理
 
-* Identify every point-and-click action
-    * Continuous mouse movement followed by click
-    * `<mouse-move, t_i, x_i, y_i>_c,j`
-        * `c`, user
-        * `i`, *i*th point-and-click action
-        * `j`, *j*th mouse move record
-        * `t`, timestamp
+* 识别每一次“指向-点击”动作
+    * 持续移动鼠标，然后点击
+    * $$\langle \textrm{mouse-move}, t_i, x_i, y_i\rangle_{c, j}$$
+        * $$i$$，第 $$i$$ 次“指向-点击”动作
+        * $$c$$，用户
+        * $$j$$，第 $$j$$ 次鼠标移动操作
+        * $$t_i$$时间戳
 
-## Feature(Metrics)
+## 特征（度量）
 
-* Direction
-    * For consecutive points $$A$$, $$B$$: $$\vec{AB}$$
-* Angle of Curvature
-    * For any three consecutive points $$A$$, $$B$$, $$C$$: $$\angle{ABC}$$, angle between $$\vec{AB}$$ and $$\vec{BC}$$
-* Curvature Distance
-    * For any three consecutive points $$A$$, $$B$$, $$C$$: ratio between $$\vert\vec{AB}\vert$$ to length of perpendicular distance from B to $$\vec{AC}$$
-* Speed
-    * `the total distance traveled for that action` divided by `the total time taken to complete the action`
-* Pause-and-Click
-    * Time between the end of the movement and the click event
+* 方向
+    * 对于连续记录的点 $$A$$，$$B$$：$$\vec{AB}$$
+* 曲率角
+    * 对于连续的三个点 $$A$$，$$B$$，$$C$$：$$\angle{ABC}$$，线段 $$AB$$ 和 $$BC$$ 夹角的角度
+* 曲率距离
+    * 对于连续的三个点 $$A$$，$$B$$，$$C$$: 线段 $$AC$$ 的长度和点 $$B$$ 到线段 $$AC$$ 距离的比例
+* 速度
+    * `动作轨迹的总距离` $$/$$ `完成动作需要的时间`
+* 暂停-点击
+    * 停止运动和点击鼠标之间的时间间隔
 
-## Mouse Movement Characterization
+## 鼠标运动特征
 
-### Dependence on different platforms
+### 受不同平台的影响
 
-* OS
-* Screen
-    * Size
-    * Resolution
-* Mouse
-    * Mouse pointer sensitivity
-    * Brand of mouse
-* Desk space available near mousepad
-* Poor choices(affects measurements)
-    * Speed
-    * Acceleration
-* Uniqueness of angle-based metrics across users
+* 系统
+* 屏幕
+    * 尺寸
+    * 分辨率
+* 鼠标
+    * 鼠标指针敏感度
+    * 鼠标品牌
+* 鼠标垫附近的桌面可利用空间
+* 糟糕的特诊选择
+    * 速度
+    * 加速度
+    * 暂停-点击
+        * 取决于阅读内容
+* 不同用户的角度特征具有唯一性
 
-### Distance Between Distributions
+### 分布间的距离
 
-* Since angle-based features are continuous variables
-* Divided into discrete intervals, $$bins$$
-* Calculate PDF for each distribution
+* 角度特征是连续变量
+* 分入离散的间隔，$$bins$$
+* 计算每个分布的概率密度函数
 * $$\mathrm{PDF}_p = \{p_1, p_2, ..., p_n\}$$
-    * $$\mathrm{PDF}_p$$ for distribution $$p$$
-    * $$p_i$$ represents the probability of falling into the $$bin_i$$
-*  the distance between $$\mathrm{PDF}_p$$, $$\mathrm{PDF}_p$$
+    * $$\mathrm{PDF}_p$$ 为 $$p$$ 的分布
+    * $$p_i$$ 意为沦入 $$bin_i$$ 中的概率
+* $$\mathrm{PDF}_p$$ 和 $$\mathrm{PDF}_q$$ 的距离
     * $$D(p,q)=\sum_i^n \vert p_i-q_i\vert$$
 
-### Number of Mouse Clicks in a Real Session
+### 实际会话中的鼠标点击次数
 
-* Average number of mouse clicks per session being about 15
-* User must be identified in fewer than 15 clicks
+* 每个会话的平均鼠标点击次数约为15次
+* 不多于15次点击，就要验证用户身份
 
-## Classifier
+## 分类
 
-* 2-class SVM
-* RBF kernel
-* Decision:
-    * Threshold
-    * Majority vote
-        * Multiple models using sampled data
+* 二分类 SVM
+    * RBF kernel
+* 决策
+    * 阈值
+    * 多数票
 
-## Limitation
+## 局限
 
-* Partial Movements
-    * Continuous mouse movements without ending in a click
-        * Intentionally performed
-        * Move its mouse just to stop the screen saver when watching a video
-        * Aid reading
-        * Moving the mouse to a link, but then decide not to click on it
-    * Compare to point-and-clicks
-        * More noisy
-        * Much more frequent
-            * 0.53 mouse clicks per minute
-            * 6.58 partial movements per minute
+* 局部移动
+    * 持续移动鼠标，并不点击
+        * 无目的行为
+            * 观看视频时避免出发屏幕保护程序
+        * 有意识的行为
+            * 辅助阅读
+            * 鼠标指向链接，不打算点击链接
+    * 与“指向-点击”相比
+        * 更多的噪声
+        * 更加频繁
+            * 每分钟 0.53 次鼠标点击
+            * 每分钟 6.58 次局部移动
+    * 以牺牲认证准确度为代价，缩短认证时间
 
-|                  | Equal Error Rate | Verification time |
-| ---------------- | ---------------- | ----------------- |
-| Point-and-click  | 1.3%             | 38 minutes        |
-| Partial movement | 1.9%             | 3 minutes         |
+|           | 等差错率 | 验证时间   |
+| --------- | -------- | ---------- |
+| 指向-点击 | 1.3%     | 38 minutes |
+| 部分运动  | 1.9%     | 3 minutes  |
 
-* Scalability problem
-    * Common problem for almost all biometrics approaches
-* More suitable to work together with other authentication methods
+* 可扩展性问题
+    * 几乎是所有生物信息识别方法的常见问题
+* 更适合与其他身份验证方法协同使用
 
-## Reference
+## 参考资料
 
 * An Efficient User Verification System via Mouse Movements, 2011
 * CS 259D Lecture 7

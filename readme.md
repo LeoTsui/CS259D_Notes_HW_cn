@@ -1,6 +1,6 @@
 # CS 259D 《数据挖掘与网络安全》笔记说明
 
-**本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。**
+**本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。如无特别说明，所有图表均引用自原始论文。**
 
 中文：[Github](https://github.com/LeoTsui/CS259D_Notes_HW_cn) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes-cn) English: [GitHub](https://github.com/LeoTsui/CS259D_Notes_HW) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes)
 
@@ -15,8 +15,7 @@
     - [生物行为统计信息](#%E7%94%9F%E7%89%A9%E8%A1%8C%E4%B8%BA%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
     - [网络安全](#%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8)
     - [网络钓鱼检测](#%E7%BD%91%E7%BB%9C%E9%92%93%E9%B1%BC%E6%A3%80%E6%B5%8B)
-    - [自动警报关联](#%E8%87%AA%E5%8A%A8%E8%AD%A6%E6%8A%A5%E5%85%B3%E8%81%94)
-    - [多分类器系统，入侵检测系统（IDS）](#%E5%A4%9A%E5%88%86%E7%B1%BB%E5%99%A8%E7%B3%BB%E7%BB%9F%EF%BC%8C%E5%85%A5%E4%BE%B5%E6%A3%80%E6%B5%8B%E7%B3%BB%E7%BB%9F%EF%BC%88ids%EF%BC%89)
+    - [入侵检测系统（IDS）](#%E5%85%A5%E4%BE%B5%E6%A3%80%E6%B5%8B%E7%B3%BB%E7%BB%9F%EF%BC%88ids%EF%BC%89)
     - [深度包检测](#%E6%B7%B1%E5%BA%A6%E5%8C%85%E6%A3%80%E6%B5%8B)
     - [多态性](#%E5%A4%9A%E6%80%81%E6%80%A7)
     - [在安全领域使用机器学习](#%E5%9C%A8%E5%AE%89%E5%85%A8%E9%A2%86%E5%9F%9F%E4%BD%BF%E7%94%A8%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0)
@@ -82,14 +81,11 @@
     * Learning to Detect Phishing Emails, Fette et al, 2007
     * Cantina: A content-based approach to detecting phishing websites, Zhang et al, 2007
 
-### 自动警报关联
+### 入侵检测系统（IDS）
 
-* Building attack scenarios from individual alerts correlation
+* 关联单个警报，构建攻击流程
     * Lecture 20
     * A Comprehensive Approach to Intrusion Detection Alert Correlation, Valeur et al, 2004
-
-### 多分类器系统，入侵检测系统（IDS）
-
 * 多分类系统（MCS）概述，MCS在安全分析中的优势
     * Lecture 10
     * Adaptive Intrusion Detection System via Online Learning, 2012
@@ -160,6 +156,3 @@
 
 * 测验
 
----
-
-如无特别说明，所有图表均引用自原始论文。

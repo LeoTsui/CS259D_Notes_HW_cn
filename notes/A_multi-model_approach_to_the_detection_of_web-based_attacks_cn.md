@@ -2,449 +2,459 @@
 
 <!-- TOC -->
 
-- [Insight](#insight)
-- [Goal](#goal)
-- [Architecture](#architecture)
-- [Web-related attack detection](#web-related-attack-detection)
-- [Data model](#data-model)
-- [Detection models](#detection-models)
-    - [Attribute length](#attribute-length)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Attribute character distribution](#attribute-character-distribution)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Structural inference](#structural-inference)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Token finder](#token-finder)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Attribute presence or absence](#attribute-presence-or-absence)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Attribute order](#attribute-order)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Access frequency](#access-frequency)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Inter-request time delay](#inter-request-time-delay)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-    - [Invocation order](#invocation-order)
-        - [User](#user)
-        - [Attacker](#attacker)
-        - [Learning](#learning)
-        - [Detection](#detection)
-- [Limitation](#limitation)
-- [Reference](#reference)
+- [背景知识和启发](#背景知识和启发)
+    - [异常检测的假设条件](#异常检测的假设条件)
+    - [Web 安全](#web-安全)
+    - [Web 相关的攻击检测](#web-相关的攻击检测)
+- [论文目标与贡献](#论文目标与贡献)
+- [数据样本](#数据样本)
+- [数据模型](#数据模型)
+- [检测模型](#检测模型)
+    - [属性长度](#属性长度)
+        - [用户](#用户)
+        - [攻击者](#攻击者)
+        - [训练](#训练)
+        - [检测](#检测)
+    - [属性字符分布](#属性字符分布)
+        - [用户](#用户-1)
+        - [攻击者](#攻击者-1)
+        - [训练](#训练-1)
+        - [检测](#检测-1)
+    - [结构推测](#结构推测)
+        - [用户](#用户-2)
+        - [攻击者](#攻击者-2)
+        - [训练](#训练-2)
+        - [检测](#检测-2)
+    - [令牌查找器](#令牌查找器)
+        - [用户](#用户-3)
+        - [攻击者](#攻击者-3)
+        - [训练](#训练-3)
+        - [检测](#检测-3)
+    - [属性是否缺失](#属性是否缺失)
+        - [用户](#用户-4)
+        - [攻击者](#攻击者-4)
+        - [训练](#训练-4)
+        - [检测](#检测-4)
+    - [属性次序](#属性次序)
+        - [用户](#用户-5)
+        - [攻击者](#攻击者-5)
+        - [训练](#训练-5)
+        - [检测](#检测-5)
+    - [访问频率](#访问频率)
+        - [用户](#用户-6)
+        - [攻击者](#攻击者-6)
+        - [训练](#训练-6)
+        - [检测](#检测-6)
+    - [请求间延迟](#请求间延迟)
+        - [用户](#用户-7)
+        - [攻击者](#攻击者-7)
+        - [训练](#训练-7)
+        - [检测](#检测-7)
+    - [调用次序](#调用次序)
+        - [用户](#用户-8)
+        - [攻击者](#攻击者-8)
+        - [训练](#训练-8)
+        - [检测](#检测-8)
+- [局限](#局限)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Insight
+## 背景知识和启发
 
-* Web servers accessible by outside world
-* Web apps developed with security as an afterthought
-* Developing ad hoc signatures is a time-intensive and error-prone activity
-* What's new
-    1. A number of different models
-        * Reduce vulnerability
-    2. Target specific types of applications
-        * More focused analysis
+### 异常检测的假设条件
 
-## Goal
+* 依赖于用户和应用的潜在行为模型
+* 假设攻击模式**异于**正常行为
+* 这个**差异**可以**定量**或**定性**地描述
+* 与正常行为的偏差视为异常的**证据**
 
-* Animaly detextion system, detect web-based attacks
-* Unsupervised, learning-based anomaly detection
-* Deployed on host
+### Web 安全
 
-## Architecture
+* Web 服务器可以由外部环境访问
+* Web 应用开发时并未事先考录安全问题
 
-* Input: Web server log files
-  * Common Log Format (CLF)
-* Analysis: build profiles for apps & active docs
-    * Lower error rates than generic profiles
-    * Use multiple models
-        * Reduce vulnerability to mimicry attacks
-* Output: Anomaly score for each web request
+### Web 相关的攻击检测
 
-## Web-related attack detection
+* 基于滥用的检测
+    * 例如：Snort
+        * 将2464个签名中的1037个用于检测与web相关的攻击
+    * 难以持续更新
+        * 时间紧，易出错，需要大量的安全专业知识
+    * 内部开发的应用程序会带来挑战
+    * 无法检测未知的攻击
+* 基于异常的检测
+    * 适用于自定义开发的 web 应用程序
+    * 支持新攻击检测
 
-1. Relay on models of the intended behavior of user and application
-2. Assume attack patterns is **different** from normal behavior
-3. The **defference** can be expressed either quantitatively or qualitatively
-4. Interprets deviations from this "normal" behavior as **evidence**
+## 论文目标与贡献
 
+* 基于无监督学习的异常检测
+* 在主机上部署
+* 大量不同的模型
+    * 减少模拟攻击带来的脆弱
+* 针对特定类型的应用
+    * 更加有针对性的分析
 
-* Misuse-based detection
-    * Example: Snort
-        * 1037 out of 2464 signatures
-    * Hard to keep up-to-date
-        * Time-intensive, error-prone, requires significant security expertise
-    * Challenge with apps developed in-house
-    * Unable to detect un-modeled attacks
-* Anomaly-based
-    * Applicable to custom-developed web apps
-    * Support detection of new attacks
-* Classification of intrusion detection
+## 数据样本
 
-## Data model
+| 数据集    | 时间间隔 | 大小 (MByte) | HTTP 请求数 | 程序 | 程序请求数 | 属性      |
+|-----------|----------|--------------|-------------|------|------------|-----------|
+| Google    | 1 h      | 236          | 640,506     | 3    | 490,704    | 1,611,254 |
+| UCSB      | 297 days | 1001         | 9,951,174   | 2    | 4617       | 7993      |
+| TU Vienna | 80 days  | 251          | 2,061,396   | 8    | 713,500    | 765,399   |
 
-* An ordered set $$U=\{u_1,u_2,...,u_m\}$$ of URIs
-    * Extract from successful GET requests
+## 数据模型
+
+![Sample web server access log entry](images/Sample_web_server_access_log_entry.png)
+
+* 一个 URI 的有序集 $$U=\{u_1,u_2,...,u_m\}$$
+    * 从成功的GET请求中提取
     * $$200 \leq \text{return-code} < 300$$
-* Components of $$u_i$$
-    * Path to desired resource: pathi
-    * Optional path information: pinfoi
-    * Optional query string: $$q$$
-        * Following a "?" Character
-        * Passing parameters to referenced resource
-        * Attributes and values: $$q = (a_1, v_1), (a_2, v_2), ..., (a_n, v_n)$$
-        * $$A$$, the set of all attributes, $$a_i$$ belongs to $$A$$
-        * $$v_i$$ is a string
+* $$u_i$$ 包括
+    * 请求资源的路径：$$path_i$$
+    * 可选路径信息：$$pinfo_i$$
+    * 可选查询字符串：$$q$$
+        * 跟随在 `?` 后面
+        * 将参数传递给查询资源
+        * 属性和值：$$q = (a_1, v_1), (a_2, v_2), ..., (a_n, v_n)$$
+        * $$A$$，所有属性的集合，$$a_i$$ 属于 $$A$$
+        * $$v_i$$，字符串
         * $$S_q = \{a_1=v_1, a_2=v_2, ..., a_n=v_n\}$$
-* URIs without query strings not included in $$U$$
-* $$U_r$$: subset of $$U$$ with resource path $$r$$
-    * Partition $$U$$
-    * Anomaly detection run independently on each $$U_r$$
+* 没有请求字符串的 URI 不包含在 $$U$$ 中
+* $$U_r$$：给定资源路径 $$r$$ 的 $$U$$ 的子集
+    * 分割 $$U$$
+    * 对每一个 $$U_r$$ 都独立进行异常检测
 
-## Detection models
+## 检测模型
 
-* One model, one query
-* Task: returns probability $$p$$ of normalcy
-* Alerting on a single anomalous attribute is **necessarily  excessively cautious**
-* Anomaly Score
-* Has an associated weight $$w$$
-    * Default $$\text{value} = 1$$, in this paper
-* Training mode
-    1. Create profiles for each server-side program  and each of its attributes
-    2. Establish suitable thresholds
-        * Store the highest anomaly score
-        * Default thresholds: $$10\%$$ larger than the max anomaly score
-* Detection mode
+* 一个查询对应各个模型
+* 对单一恶意属性发出警报是**必要的谨慎**
+* 训练模式
+    * 为每个服务器端的程序，及其每个属性建立模型
+    * 设定适合的阈值
+        * 存储最高的异常分数
+        * 默认阈值：比训练模式中的最大异常分数大 $$10\%$$
+* 检测模式
+    * 任务：输出正常的概率 $$p$$
+    * 异常分数，$$\sum_{m \in \text{Models}} w_m (1 - p_m)$$
+        * 设定相关权重 $$w$$
+            * 本文中默认 $$\text{value} = 1$$
 
-### Attribute length
+### 属性长度
 
-* Length distribution mot follow a smooth curve
-* Distribution has a large variance
+* 长度的分布并不是一条光滑的曲线
+* 分布差异很大
 
-#### User
+#### 用户
 
-* Fixed size tokens
-    * Session identifiers
-* Short input strings
-    * Fields in an HTML form
+* 固定大小的令牌
+    * 会话标识符
+* 输入字符串较短
+    * HTML表单中的字段
 
-#### Attacker
+#### 攻击者
 
-* Buffer overflow: shell code & padding
-    * Several hundred bytes
+* 缓冲区溢出攻击：shell code 和 padding
+    * 数百个字节
 * XSS
 
-#### Learning
+#### 训练
 
-* Estimate mean μ and variance $$\sigma^2$$ of lengths in training data
+* 估计训练数据长度的均值 $$\mu$$ 和方差 $$\sigma^2$$
 
-#### Detection
+#### 检测
 
-* Strings with length larger than mean
+* 长度大于均值的字符串
     * If $$\text{length} < \text{mean}$$, $$p = 1$$
-    * Padding not effective
-* **Chebyshev inequality is weak bound**
-* **Useful to flag only significant outliers**
+    * 使得 padding 失效
+* 切比雪夫不等式是弱上界
+* 仅用于标记重要的异常值
 
-### Attribute character distribution
+### 属性字符分布
 
-* Character distribution: sorted relative frequencies
-    * Lost relative frequencies
-    * Example: $$\text{passwd} \Rightarrow 0.33, 0.17, 0.17, 0.17, 0.17, 0, ..., 0$$
-    * Fall smoothly for human-readable tokens
-    * Fall quickly for malicious input
+* 字符分布:相对频率排序
+    * 丢失单个字符与相对频率的关系
+        * `passwd`：0.33, 0.17, 0.17, 0.17, 0.17, 0, ..., 0
+        * 与 `aabcde` 一样
+    * 在人类可读的令牌频率平滑下降
+    * 在恶意输入中快速下降
 
-#### User
+#### 用户
 
-* Observations about attributes:
-    * Regular structure
-    * Mostly human readable
-    * Almost always contain only printable characters
-*  Frequencies of query parameters distribution
-    * Not identical to a standard English text
-    * Similar to others
+* 属性观察到的特征
+    * 常规结构
+    * 大多数人类可读
+    * 几乎只包含可打印字符
+* 查询参数频率分布
+    * 与英文文本近似
 
-#### Attacker
+#### 攻击者
 
-* Example:
-    * Buffer overflow: needs to send binary data & padding
-    * Directory traversal exploit: many dots in attribute value
+* 重复的填充字符使得频率快速下降
+* 例子
+    * 缓冲区溢出:需要发送二进制数据和填充字符
+    * 文件目录遍历：属性中会有许多`.`
 
-#### Learning
+#### 训练
 
-* character distribution of each observed attribute is stored
-* Average of all character distributions computed
+* 存储每个观测到的属性的字符分布
+* 计算所有字符属性分布的平均值
 
-#### Detection
+#### 检测
 
-* Variant of the $$\text{Pearson}\ \chi^2\text{-test}$$
-    * goodness-of-fit
-* Bins: $$\{[0], [1, 3], [4, 6], [7, 11], [12, 15], [16, 255]\}$$
-* For each query attribute:
-    * Compute character distribution
-    * Observed values $$O_i$$ : Aggregate over bins
-    * Expected values $$E_i$$ : Learned character distribution attribute length
-* Compute: $$\chi^2$$
-* Read corresponding probability
+* $$\text{Pearson}\ \chi^2\text{-test}$$ 的变体
+    * 适合程度
+* Bins：$$\{[0], [1, 3], [4, 6], [7, 11], [12, 15], [16, 255]\}$$
+* 对每一个查询属性
+    * 计算字符分布
+    * 观测频率 $$O_i$$ ：由 bins 聚集
+    * 期望频率 $$E_i$$ ：训练属性字符分布的长度
+* 计算：$$\chi^2 = \sum_{i=0}^{i<6} \frac{(O_i - E_i)^2}{E_i}$$
+* 读取对应概率
 
-### Structural inference
+### 结构推测
 
-#### User
+#### 用户
 
-* Parameter structure
-    * Regular grammar describing all of its legitimate values
+* 参数结构
+    * 用于描述合法参数的正规语法
 
-#### Attacker
+#### 攻击者
 
-* Detect exploits requiring different parameter structure
-    * Examples: Buffer overflow, directory traversal, XSS
-* Simple manifestations of an exploit
-    * Unusually long parameters
-    * Parameters containing repetitions of non-printable characters
-* **Evasion**
-    * Replace non-printable characters by groups of printable characters
+* Exploit 需要不同的参数结构
+    * 例如：缓冲区溢出，目录遍历，XSS
+* Exploit 的浅显特征
+    * 通常参数较长
+    * 参数包含重复的不可打印的字符
+* **逃避检测**
+    * 使用可打印字符代替
 
-#### Learning
+#### 训练
 
-* Seems to be "reasonable"
-* Stop before lost much structural information
-* Goal: Find a model(NFA) with highest likelihood given training examples
-* Markov model/Non-deterministic finite automaton (NFA)
-    * "Reasonable generalizaton"
-    * $$P_s(o)$$: probability of emitting symbol $$o$$ at state $$S$$
-    * $$P(t)$$: probability of transition $$t$$
-    * Output: paths from Start state to Terminalstate
-* Bayesian model induction:
+* 看似**合理**
+* 在丢失太多结构信息前停止
+* 目标：找到一个模型（NFA）能给予训练样本最大的可能性
+* 马尔科夫模型/非确定有限自动机（NFA）
+    * “合理的概括”
+    * $$P_s(o)$$：在状态 $$S$$ 时，输出 $$o$$ 的概率
+    * $$P(t)$$：转移 $$t$$ 的概率
+    * 输出：从开始到终止的路径
+* 贝叶斯模型归纳
     * $$P(\text{model}\mid\text{training}\_\text{data}) = \frac{p(\text{training}\_\text{data}\mid\text{model})*p(\text{model})}{p(\text{training}\_\text{data})}$$
-    * $$P(\text{training}\_\text{data})$$ a scaling factor; ignored
-    * $$P(\text{training}\_\text{data}\mid\text{model})$$ computed as last slide
-    * $$P(\text{model})$$: preference towards smaller models
-        * Total number of states: $$N$$
-        * Total number of transitions at each state $$S$$: $$T(S)$$
-        * Total number of emissions at each state $$S$$: $$E(S)$$
-    * Start with a model exactly reflecting input data
-    * Gradually merge states
-    * Until posterior probability does not increase
-    * Cost: $$O((n*L)^3)$$ with n training input strings, and L maximum length of each string
-    * Up to $$n*L$$ states
-    * $$\frac{(n*L)(n*L-1)}{2}$$ comparisons for each merging
-    * Up to $$n*(L-1)$$ merges
-* Optimizations
-    * Viterbi path approximations
-    * Path prefix compression
-    * Cost: $$O(n*L^2)$$
+    * $$P(\text{training}\_\text{data})$$ 比例系数，被忽略
+    * $$P(\text{model})$$：优先选择小模型
+        * 所有状态总数：$$N$$
+        * 状态 $$S$$ 的所有转移数：$$T(S)$$
+        * 状态 $$S$$ 的所有输出数：$$E(S)$$
+* 从一个完全反映输入数据的模型开始
+* 逐渐合并状态
+* 直到后验概率不增加
+* 计算复杂度：$$O((n*L)^3)$$ ，输入字符串 n，最大长度 L
+* 最多有 $$n*L$$ 个状态
+* 每次合并 $$\frac{(n*L)(n*L-1)}{2}$$ 次比较
+* 最多 $$n*(L-1)$$ 次合并
+* 优化
+    * Viterbi 路径近似值
+    * 路径前缀压缩
+    * 复杂度： $$O(n*L^2)$$
 
-#### Detection
+#### 检测
 
-* First option: Compute probability of query attribute
-    * Issue: probabilities of all input words sum up to $$1$$
-    * all words have small probabilities
-* Output:
-    * $$p = 1$$ if word is a valid output of Markov model
-    * $$p = 0$$ otherwise
+* 首选项：计算查询属性的概率
+    * 要求：所有概率相加为 $$1$$
+    * 所有单词的概率都很小
+* 输出：
+    * 如果单词是马尔科夫模型的有效输出 $$p = 1$$
+    * 否则 $$p = 0$$
 
-### Token finder
+### 令牌查找器
 
-* Goal: determine whether values of an attribute are drawn from an enumerated set of tokens
+* 路标：确定属性值是否提取自一个可枚举的令牌集
 
-#### User
+#### 用户
 
-* Web applications often require one out of a few possible values for certain query attributes
-    * Example: flags, indices
+* 对于某些特定的属性，Web 应用常常要请求一个或多个可能的值
+    * 例如:标志、索引
 
-#### Attacker
+#### 攻击者
 
-* Use these attributes to pass illegal values
+* 使用这些属性传递非法值
 
-#### Learning
+#### 训练
 
-* Enumerated or Random
-* Growth in # of different argument instances compared to total # of argument instances
-* Compute correlation between these numbers:
-* $$F(x) = x$$
-* $$G(x)$$, $$G$$ is like a "enumeration counter"
-    * $$G(x) = G(x-1)+1$$ if $$\text{x-th}$$ value is new
-    * $$G(x) = G(x-1)-1$$ if $$\text{x-th}$$ value was seen before
-    * $$G(x) = 0$$ if $$x = 0$$
-    * $$Corr = \frac{Covar(F, G)}{\sqrt{Var(F)Var(G)}}$$
-    * If $$Corr < 0$$, then enumeration
-    * If enumeration, then store all values for use in detection phase
+* 参数是可枚举的或随机的变量
+    * 不同的参数样本数量与总体样本数量成比例增长时，视为随机变量
+    * 不存在上述的增长，视为枚举值
+* 计算 $$f$$ 和 $$g$$ 之间的相关性 $$\rho$$
+    * $$f(x) = x$$
+    * $$g(x)$$, $$g$$，类似于枚举计数器
+        * $$g(x) = g(x-1)+1$$，当 $$x^{th}$$ 是新值时
+        * $$g(x) = g(x-1)-1$$，当 $$x^{th}$$ 存在时
+        * $$g(x) = 0$$，当 $$x = 0$$
+    * $$Corr = \frac{Covar(f, g)}{\sqrt{Var(f)Var(g)}}$$
+        * 如果 $$Corr < 0$$，为枚举值
+        * 如果是枚举值，储存所有数值用于检测阶段
 
-#### Detection
+#### 检测
 
-* If enumeration: value expected to be among stored values
-    * Output $$p = 1$$ or $$p = 0$$ correspondingly
-    * If random: $$p = 1$$
-    * Hash table lookup, efficiency
+* 如果是枚举值，则期望变量值落在存储的数值中
+    * 相应的输出 $$p = 1$$ 或 $$p = 0$$
+    * 使用哈希表，提高查找效率
+* 如果是随机变量，$$p = 1$$
 
-### Attribute presence or absence
+### 属性是否缺失
 
-#### User
+#### 用户
 
-* URIs typically produced not directly by user, but by scripts, forms, client-side programs
-    * Regularity in number, name, order of parameters
+* URI通常不是由用户直接生成的，而是由脚本，表单，客户端程序生成
+    * 参数的数量，名称，顺序存在规律
 
-#### Attacker
+#### 攻击者
 
-* Hand-crafted attacks typically break this regularity
-    * Incomplete or malformed requests to probe/exploit web app
-        * Missing argument
-        * Mutually exclusive arguments appearing together
+* 手动攻击通常会打破这种规律
+    * 不完整或格式错误的请求来探测/exploit Web 应用
+        * 参数缺失
+        * 互斥参数同时出现
 
-#### Learning
+#### 训练
 
-* Create a model of acceptable subsets of attributes
-* Record each distinct set $$S_q$$
-    * Each query $$q$$ during training
-    * Hash table
+* 根据属性可接受数据的子集创建一个模型
+* 记录每一个不同的集合 $$S_q$$
+    * 训练期间的每一个请求 $$q$$
+    * 哈希表
 
-#### Detection
+#### 检测
 
-* Lookup the attribute set in hash table
-    * Return $$p = 1$$ or $$p = 0$$ correspondingly
+* 在哈希表中查找属性集
+    * 返回相应的 $$p = 1$$ 或 $$p = 0$$
 
-### Attribute order
+### 属性次序
 
-#### User
+#### 用户
 
-* same parameters in the same order
-* sequential
-* Sequential program logic preserves order even when some attributes left out
+* 相同的参数在相同的次序
+* 即使一些属性被省略，依旧能表现出有序的程序逻辑
 
-#### Attacker
+#### 攻击者
 
-* Arbitrary
-* No influence on the execution of the program
+* 顺序任意
+* 顺序不影响程序执行
 
-#### Learning
+#### 训练
 
-* Attribute $$a_s$$ precedes $$a_t$$ if as and at appear together in parameter list of at least one query and $$a_s$$ comes before $$a_t$$  when theyappear together
-* Directed graph
-* $$\text{number of vertices} = \text{number of attributes}$$
-* For each training query, add edges between nodes of ordered attribute pairs
-* Find all strongly connected components (SCC) of the graph
-* Remove edges between nodes in same SCC
-* For each node, find all reachable nodes
-* Add corresponding pairs to set of precedence orders
-* Tarjan's algorithm, $$O(v + e)$$
+* 属性 $$a_s$$ 在 $$a_t$$ 之前
+    * $$a_s$$, $$a_t$$ 至少出现在一个查询中
+    * 当他们同时出现时，$$a_s$$ 先于 $$a_t$$ 出现
+* 有向图 $$G$$
+* 顶点 $$v_i$$ 对应属性 $$a_i$$
+    * 顶点数等于属性数
+* 对于每个训练查询，在有序属性对对应的节点之间添加边
+    * 有向边对应有序顶点的次序
+* 找出这个图的所有强连通分量（strongly connected component，SCC）
+* 移除强联通分量中的边
+    * 把“次序”从无序的属性群中移除
+* 对于每一个点，找到可以到达的点
+* 把对应的次序对 $$(a_s, a_t)$$ 添加到次序集 $$O$$ 中
+* Tarjan's 算法，$$O(v + e)$$
 
-#### Detection
+#### 检测
 
-* Find all order violations
-    * Return $$p = 0$$ or $$p = 1$$ correspondingly
+* 找到所有违规的次序
+    * 相应的返回 $$p = 0$$ 或 $$p = 1$$
 
-### Access frequency
+### 访问频率
 
-* Frequency patterns of different server-side web applications
-* Two types of frequencies:
-    * Frequency of application being accessed from a certain client
-        * Base on IP address
-    * Total frequency of all accesses
+* 不同的服务器端 Web 应用，访问频率不同
+* 两种频率类型
+    * 特定用户访问某个应用的频率
+        * 基于 IP 地址
+    * 所有访问的总频率
 
-#### User
+#### 用户
 
-* Eg 1. Authentication script
-    * Very infrequently for each individual client
-* Eg 2. Search script
-    * High for particular client
-    * Low for total
+* 例1 用户验证脚本
+    * 每一个用户使用都不频繁
+* 例2 搜索脚本
+    * 对特定用户高
+    * 总体较低
 
-#### Attacker
+#### 攻击者
 
-* Suddenly increase access frequency
-* Probing
-* Guess parameter values
-* Evasion: slow down
+* 访问频率突然增加
+* 探测
+* 猜测参数值
+* 逃避手段：放慢攻击速度
 
-#### Learning
+#### 训练
 
-* divide training time to intervals of fixed time (e.g., 10 sec)
-* Count accesses in each interval
-* Find total and client-specific distributions
+* 划分训练时间为固定时间间隔（例如，10秒）
+* 按区间统计访问次数
+* 得出总体和分用户的统计分布
 
-#### Detection
+#### 检测
 
-* Chebyshev probability for total, and for client
-* Return average of the two probabilities
+* 分总体\用户计算切比雪夫概率
+* 返回这两个概率的平均值
 
-### Inter-request time delay
+### 请求间延迟
 
-#### User
+#### 用户
 
-* Wide variance
+* 差异很大
 
-#### Attacker
+#### 攻击者
 
-* Regular delay between each successive request
-    * Surveillance
-    * Scripted probe
+* 连续的请求之间的延迟有规律
+    * 监视
+    * 脚本探测
 
-#### Learning
+#### 训练
 
-* Find distribution of normal delays
-    * Similar to character distribution model
+* 找到正常的延迟分布
+    * 类似于字符分布模型
 
-#### Detection
+#### 检测
 
 * $$\text{Pearson}\ \chi^2\text{-test}$$
 
-### Invocation order
+### 调用次序
 
-* Order of invocation of web-based applications for each client
-    * Infer session structure regularity
-    * Similar to structural inference model
-#### User
+* 每个客户调用 Web 应用的次序
+    * 推断会话结构的规律
+    * 类似于结构推测模
+        * 查询的次序，而不是
+        * 每次查询的参数语法
 
-* Invocation order can be generated by a certain Markov model
+#### 用户
 
-#### Attacker
+* 调用顺序可以由特定的马尔可夫模型生成
 
-* Cannot be outputed by that model
+#### 攻击者
 
-#### Learning
+* 攻击应用逻辑时会被检测到
+* 不能由这种模式生成
 
-* group queries based on source IP
-    * Session: Queries within an interval of time
-    * Build NFA for sessions
+#### 训练
 
-#### Detection
+* 按来源 IP 组合查询
+    * 会话：在一定时间段内的查询
+    * 为会话构建 NFA
+* 独立于服务器端的引用
 
-* $$p = 1$$ or $$p = 0$$ depending on session being an output of NFA
+#### 检测
 
-## Limitation
+* 依照 NFA 的结果，返回 $$p = 1$$ 或 $$p = 0$$
 
-* Google
-    * Nearly half of the number of false positives
-        * Anomalous search strings that contain instances of non-printable characters
-            * Probably requests issued by users with incompatible character sets
-        * Extremely long strings
-            * Such as URLs directly pasted into the search field
+## 局限
 
-## Reference
+* Google，假阳性接近半数
+    * 异常的搜索字符串包含不可打印的字符
+        * 可能由使用不同的字符集的用户发出的请求·
+    * 超长字符串
+        * 例如，把网址直接粘贴到搜索框中
+
+## 参考资料
 
 * A multi-model approach to the detection of web-based attacks, 2005
 * CS 259D Lecture 8

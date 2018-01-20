@@ -244,7 +244,7 @@ GET /cgi-bin/show.cgi?sID=' or 1=1;--&file=access.log
 * 激活启发式
     * 属性结构
 * 攻击推测
-    * Scan attribute value for SQL keywords (e.g., `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `'`, `--`)
+    * 扫描属性值中的 SQL 关键字（例如：`SELECT`，`INSERT`，`UPDATE`，`DELETE`，`'`，`--`）
 
 #### 缓冲区溢出
 

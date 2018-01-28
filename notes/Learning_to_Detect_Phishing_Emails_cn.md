@@ -2,126 +2,125 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Goal and Contribution](#goal-and-contribution)
-- [Data](#data)
-- [Feature](#feature)
-- [Features in Webpage Classification](#features-in-webpage-classification)
-- [Machine Learning Implementation](#machine-learning-implementation)
-- [Reference](#reference)
+- [背景知识和洞见](#背景知识和洞见)
+- [本文目标和贡献](#本文目标和贡献)
+- [数据来源](#数据来源)
+- [特征](#特征)
+- [网页分类的特征](#网页分类的特征)
+- [机器学习实践](#机器学习实践)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景知识和洞见
 
-* Phishing
-    * Goal:
-        * Account information
-        * Logon credentials
-        * Identity information
-    * Attack vectors:
-        * Legitimate-looking emails
-        * Legitimate-looking websites
-* Detection
-    * Toolbars
-        * Examples
+* 网络钓鱼
+    * 目标
+        * 帐户信息
+        * 登录凭证
+        * 身份信息
+    * 攻击路径
+        * 看起来合规的邮件
+        * 看起来合规的网站
+* 检测
+    * 工具栏
+        * 例子
             * Spoofguard
             * Netcraft
-        * Disadvantages
-            * Decreased amount of contextual information
-            * Involve users in decision making process
-    * Email filtering
-        * Examples
+        * 缺点
+            * 上下文信息少
+            * 用户要参与决策
+    * Email 过滤
+        * 例子
             * SpamAssassin
             * Spamato
-        * Advantages
-            * More complete context (content, headers, etc.)
-            * Completely shield user from decision-making process
+        * 有点
+            * 更完整的上下文信息（内容，标题等）
+            * 判别工程对用户屏蔽
 
-## Goal and Contribution
+## 本文目标和贡献
 
-* A machine-learning based phishing e-mail filter
+* 基于机器学习方法的 e-mail 过滤器
 
-## Data
+## 数据来源
 
-* SpamAssassin ham corpora
-    * ~6950 non-phishing non-spam
-* Publicly available phishingcorpus
-    * ~ 860 phishing messages
-    * Challenge with WHOIS queries
-        * Only 505 domains out of 870 domains
-        * Increases false negative rate
+* SpamAssassin ham 语料库
+    * 大约6950封非钓鱼非垃圾邮件
+* 公开可获得的 phishingcorpus
+    * 大约860封钓鱼邮件
+    * WHOIS 查询带来的问题
+        * 只从870个域名中提取了505个域名
+        * 提高了假阴性率
 
-## Feature
+## 特征
 
-* IP-based URLs
-    * Example:
-        * `http://192.168.0.1/paypal.cgi?fix_account`
-    * Compromised PCs with no DNS entries
-    * Not popular
-    * Binary feature
-* Age of linked-to domain names
-    * Registered legitimate-sounding domain names
-        * Example: `playpal.com`, `paypal-update.com`
-    * Typically short life-span
-        * Registered using stolen credit cards, canceled by registrar
-        * Domain caught by anti-phishing monitors
-        * Often lasting only ~ 48 hours
-    * Obtained using a WHOIS query
-    * Binary feature: Lifetime < 60 days
-* Non-matching URLs
-    * Example: `<a href="badsite.com"> paypal.com</a>`
-    * Binary feature: URL text different from HREF
-* "Here" links to non-modal domain
-    * Example: Click here to restore your account
-    * Modal domain: domain most frequently linked to
-    * Binary feature: link with text "link", "click", "here" that links to a domain other than modal domain
-* HTML emails
-    * Binary feature: email section with MIME type text/html
-* Number of links
-    * Continuous feature(Numeric feature): # links in HTML part(s) of email
-    * Link defined by an `<a>` tag with href attribute
-        * Including `mailto:` links
-* Number of domains
-    * Domain names for URLs starting with http/ https
-    * Only the main part of the domain name
-        * What registrar gets paid for
-            * Not necessarily same as combination of top- & 2nd-level domain
-        * Example:
-            * `university.edu` for `www.cs.university.edu`
-            * `company.co.jp` for `www.company.co.jp`
-                * Top-level: `.jp`
-                * second-level: `.co`
-    * Numeric feature: # distinct domains
-* Number of dots
-    * Subdomains: `http://www.my-bank.update.data.com`
-    * Redirection script: `http://www.google.com/url?q=http://www.badsite.com`
-        * Looks to naive user to be from `google.com`
-        * Redirects browser to `badsite.com`
-    * Numeric feature: Maximum number of dots in any of the links in the email
-* Contains javascript
-    * Binary feature: string "javascript" appears in email
-    * In `<script>` or `<a>` tag
-* Spam filter output
-    * Binary feature: class assigned to email by SpamAssassin
+* 基于 IP 的 URL 地址
+    * 例如：`http://192.168.0.1/paypal.cgi?fix_account`
+    * 被入侵的电脑没有 DNS 条目
+    * 不流行
+    * 二值特征
+* 链接到的域名的寿命
+    * 注册看起来合法的域名
+        * 例如：`playpal.com`，`paypal-update.com`
+    * 通常寿命较短
+        * 使用被盗的信用卡注册，由注册者取消
+        * 域名反钓鱼监控者捕获
+        * 通常只存在 48 小时
+    * 通过 WHOIS 查询获得
+    * 二值特征: 生存时间 < 60 天
+* 不匹配的 URL
+    * 例如：`<a href="badsite.com"> paypal.com</a>`
+    * 二值特征: URL 文本不同于 `href`
+* “点击这里”链接到“非期望中”的域名
+    * 例如：点击这里保存账户
+    * “期望中”的域名：域名经常被链接到
+    * 二值特征：文本包含“点击这里”的链接链接到的域名不是“期望中”的域名
+* HTML 邮件
+    * 二值特征：电子邮件部分有 MIME 类型的 text/html
+* 链接数量
+    * 连续特征（数值特征）：邮件中 HTML 部分的连接数
+    * 由 `href` 属性的 `href` 标签来定义链接
+        * 包含 `mailto:` 链接
+* 域名数量
+    * 以 http/https 开头的网址域名
+    * 只包含域名的“主要部分”
+        * 注册商从哪获得回报
+            * 不要拘泥于顶级域名和二级域名
+        * 例如：
+            * `university.edu` 之于 `www.cs.university.edu`
+            * `company.co.jp` 之于 `www.company.co.jp`
+                * 顶级域名：`.jp`
+                * 二级域名`.co`
+    * 数值特征：不同域名的数量
+* 点的数量
+    * 子域名：`http://www.my-bank.update.data.com`
+    * 重定向脚本：`http://www.google.com/url?q=http://www.badsite.com`
+        * 对于无戒心的用户而言，网址看似来自 `google.com` 
+        * 浏览器重定向到 `badsite.com`
+    * 数值特征：电子邮件中任何链接的最大点数
+* 包含的 javascript
+    * 二值特征: "javascript"字串出现在邮件中
+    * 在 `<script>` 或 `<a>` 标签中
+* 垃圾邮件过滤器的结果
+    * 二值特征: SpamAssassin 识别出的类别
 
-## Features in Webpage Classification
+## 网页分类的特征
 
-* Site in browser history
-    * A site never previously visited(not in the history) is more likely to be a phishing website
-* Redirected site
+* 浏览器历史记录中的网站
+    * 一个没有被访问过的网站（不在历史记录中）很有可能是钓鱼网站
+* 网站重定向
 * tf-idf
-    * Identify key terms of a page
+    * 定一个页面的关键词
 
-## Machine Learning Implementation
+## 机器学习实践
 
-* 10-fold cross validation
-* Classifier: Random forest
-    * 10 decision trees
-    * Each decision made on a random attribute
-    * Trees pruned
+* 10-fold 交叉验证
+* 分类器:随机森林
+    * 10个决策树
+    * 基于随机的属性做决定
+    * 剪枝
 
-## Reference
+## 参考资料
 
 * Learning to Detect Phishing Emails, Fette et al, 2007
 * CS 259D Lecture 16

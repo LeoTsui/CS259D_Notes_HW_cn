@@ -2,275 +2,285 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Goal and Contribution](#goal-and-contribution)
-- [Data](#data)
-- [Feature](#feature)
-- [Architecture](#architecture)
-    - [Components](#components)
-- [Alert Process](#alert-process)
-    - [Meta-alerts](#meta-alerts)
-    - [Example Attack Scenario](#example-attack-scenario)
-    - [Alert Normalization](#alert-normalization)
-    - [Alert Preprocessing](#alert-preprocessing)
-    - [Alert Fusion](#alert-fusion)
-    - [Alert Verification](#alert-verification)
-    - [Attack Thread Reconstruction](#attack-thread-reconstruction)
-    - [Attack Session Reconstruction](#attack-session-reconstruction)
-    - [Attack Focus Recognition](#attack-focus-recognition)
-    - [Multistep Correlation](#multistep-correlation)
-    - [Impact Analysis](#impact-analysis)
-    - [Alert Prioritization](#alert-prioritization)
-- [Reference](#reference)
+- [背景知识和启发](#背景知识和启发)
+- [本文目标和贡献](#本文目标和贡献)
+- [数据](#数据)
+- [特征](#特征)
+- [体系架构](#体系架构)
+    - [组件](#组件)
+- [报警过程](#报警过程)
+    - [元警报（Meta-Alert）](#元警报meta-alert)
+    - [攻击场景实例](#攻击场景实例)
+    - [警报标准化](#警报标准化)
+    - [警报预处理](#警报预处理)
+    - [警报融合](#警报融合)
+    - [警报验证](#警报验证)
+    - [攻击线程重建](#攻击线程重建)
+    - [攻击会话重建](#攻击会话重建)
+    - [攻击焦点识别](#攻击焦点识别)
+    - [多步关联](#多步关联)
+    - [影响分析](#影响分析)
+    - [警报优先级](#警报优先级)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景知识和启发
 
-* How to cover multiple aspects "as a whole"
+* 如何把各个方面连为一个整体
+    * 不同的攻击表现
+        * 网络数据包
+        * 系统调用
+        * 审计记录
+        * 应用程序日志
+    * 不同类型的入侵检测
+        * 主机 vs 网络
+        * IT环境（例如，Windows vs Linux）
+        * 抽象级别（例如，内核级别与应用级别）
 
-## Goal and Contribution
+## 本文目标和贡献
 
-* Comprehensive correlation approach
-* Build a Framework
+* 聚合多个IDS的输出
+* 滤除不相关的警报
+* 提供简明的网络安全活动视图
 
-## Data
+## 数据
 
-| Data Set      | Sensors                                      | Duration | Alerts  |
-| ------------- | -------------------------------------------- | -------- | ------- |
-| IT/LL 1999    | USTAT, Snort                                 | 2 weeks  | 41760   |
-| MIT/LL 2000   | USTAT, Snort                                 | 3 hours  | 36635   |
-| CTV           | Snort, EBayes-TCP, U-STAT, WinSTAT, Tripwire | 2 days   | 215190  |
-| Defcon        | Snort                                        | 2 days   | 6378096 |
-| Rome AFRL     | Snort and undisclosed NIDS                   | 4 months | 5299390 |
-| Honeypot      | Snort                                        | 10 days  | 260120  |
-| Treasure Hunt | Snort, LinSTAT                               | 4 hours  | 2811169 |
+| 数据集             | 报警器                                       | 持续时间 | 警报数量 |
+| ------------------ | -------------------------------------------- | -------- | -------- |
+| IT/LL 1999         | USTAT，Snort                                 | 2 周     | 41760    |
+| MIT/LL 2000        | USTAT，Snort                                 | 3 小时   | 36635    |
+| CTV                | Snort，EBayes-TCP，U-STAT，WinSTAT，Tripwire | 2 天     | 215190   |
+| Defcon             | Snort                                        | 2 天     | 6378096  |
+| 罗马空军研究实验室 | Snort，未公开的 NIDS                         | 4 月     | 5299390  |
+| 蜜罐               | Snort                                        | 10 天    | 260120   |
+| 寻宝               | Snort，LinSTAT                               | 4 小时   | 2811169  |
 
 
-* Two existing data sets
-   * DARPA
+* 两个现有的数据集
+    * DARPA
         * MIT Lincoln Laboratory 1999
         * MIT Lincoln Laboratory 2000
     * Defcon 9
-    * Shortcoming
-        * Created to evaluate IDS, not include sensor alerts
-        * Not real environment, not real time
-        * Lack of network health monitoring information
-            * Difficult to determine the actual impact of the attacks
-        * Not include anomalous traffic, non-anomalous behavior
-* Three additional data sets
-    * Two honeypot systems
+    * 缺点
+        * 为评估 IDS 而建立，不包含报警器警报
+        * 非真实环境，非实时
+        * 缺乏网络环境健康检测信息
+            * 难以确定攻击造成的实际影响
+        * 不包括异常流量和非异常行为
+* 三个额外的数据集
+    * 两个蜜罐系统
         * RedHat 7.2 Linux
         * Microsoft Windows 2000 Server
-    * Cyber Treasure Hunt competition
-    * Rome Air Force Research Laboratory’s networks
-        * No successful attacks.
-* Manually perform the correctness of the correction process
+    * 网络寻宝竞赛
+    * 罗马空军研究实验室网络
+        * 没有成功的攻击
+* 人工保证关联过程的正确性
 
-## Feature
+## 特征
 
-## Architecture
+## 体系架构
 
-![ Correlation process overview](images/alert_correlation.png)
+![关联过程概况](images/alert_correlation.png)
 
-* Optional
-* Parallel
-* Feedback as input
+* 可选
+* 并行
+* 反馈作为输入
 
-### Components
+### 组件
 
-* Normalization
-    * Translate alerts to a common format
-    * Alerts from different sensors can be encoded in different formats
-* Preprocessing
-    * augment normalized alerts by assigning meaningful values to all alert attributes
-        * Start time
-        * End time
-        * Source
-        * Target
-* Fusion
-    * Combine alerts representing the same attack by different IDSs
-* Verification
-    * Determine the success of the single attack corresponding to the alert
-    * Decrease the influence of the failed attacks
-* Thread reconstruction
-    * Combine series of alerts due to attacks by a single attacker against a single target
-* Session reconstruction
-    * Associate network-based alerts and host-based alerts
-* Focus recognition
-    * Identify hosts that are source or target of many attacks
+* 正规化
+    * 将警报转换为通用格式
+    * 来自不同报警器的警报被编码为不同的格式
+* 预处理
+    * 为所有已经格式化的警报添加有意义的属性值，以此增强警报
+        * 开始时间
+        * 结束时间
+        * 攻击来源
+        * 攻击目标
+* 聚合
+    * 结合来自不同的 IDS，但代表相同攻击的警报
+* 验证
+    * 保证警报与单一攻击向对应
+    * 减少失败攻击的影响
+* 线程重建
+    * 单一攻击者对单一目标发起一系列的攻击，把这些攻击造成的警报结合起来
+* 会话重建
+    * 把基于网络的警报和基于主机的警报加以关联
+* 焦点识别
+    * 识别出许多攻击的来源或目标的主机
         * DoS
-        * port scanning
-* Multistep correlation
-    * Identify common attack patterns
-        * Sequence of individual attacks at different points of network
-            * Island hopping
-* Impact analysis
-    * Determine the attack impact for the specific target network
-* Prioritization
-    * Assign priorities to alerts
+        * 端口扫描
+* 多步关联
+    * 识别常见攻击模式
+        * 网络中不同位的单一攻击组成的序列
+            * 跳岛攻击
+* 影响分析
+    * 确定攻击对特定的目标网络造成的影响
+* 优先级
+    * 为警报分配优先级
 
-## Alert Process
+## 报警过程
 
-### Meta-alerts
+### 元警报（Meta-Alert）
 
-* Definition:
-    * Higher-level alerts made via merging
-    * Attribute values derived from those of original alerts
-* Example:
-    * a "portscan" alert composed of a series of alerts referring to individual network probe packets
-    * Target attribute: all hosts that were port-scanned
-* Representation:
-    * A tree with IDS alerts at the leaves
-    * Merging done in a BFS fashion
+* 定义
+    * 融合而来的高级警报
+    * 从原始警报派生出属性值
+* 例子
+    * 一系列单个网络探测数据包引发的警报，组合成“端口扫描”警报
+    * 目标属性，端口扫描的所有主机
+* 表示方法
+    * 叶节点为 IDS 警报的树
+    * 广度优先搜索（BFS）完成合并
 
-### Example Attack Scenario
+### 攻击场景实例
 
-| AlertID | Name           | Sensor | Start/End | Source   | Target            | Tag |
-| ------- | -------------- | ------ | --------- | -------- | ----------------- | --- |
-| 1       | IIS Exploit    | N1     | 12.0/12.0 | 80.0.0.1 | 10.0.0.1, port:80 |     |
-| 2       | Scanning       | N2     | 10.1/14.8 | 31.3.3.7 | 10.0.0.1          |     |
-| 3       | Portsacn       | N1     | 10.0/15.0 | 31.3.3.7 | 10.0.0.1          |     |
-| 4       | Apache Exploit | N1     | 22.0/22.0 | 31.3.3.7 | 10.0.0.1, port:80 |     |
-| 5       | Bad Request    | A      | 22.1/22.1 |          | localhost, Apache |     |
-| 6       | Local Exploit  | H      | 24.6/24.6 |          | linuxconf         |     |
-| 7       | Local Exploit  | H      | 24.7/24.7 |          | linuxconf         |     |
+| 攻击 ID | 名称           | 报警器 | 起止时间  | 来源     | 目标              | 标签 |
+| ------- | -------------- | ------ | --------- | -------- | ----------------- | ---- |
+| 1       | IIS Exploit    | N1     | 12.0/12.0 | 80.0.0.1 | 10.0.0.1, port:80 | ...  |
+| 2       | Scanning       | N2     | 10.1/14.8 | 31.3.3.7 | 10.0.0.1          | ...  |
+| 3       | Portsacn       | N1     | 10.0/15.0 | 31.3.3.7 | 10.0.0.1          | ...  |
+| 4       | Apache Exploit | N1     | 22.0/22.0 | 31.3.3.7 | 10.0.0.1, port:80 | ...  |
+| 5       | Bad Request    | A      | 22.1/22.1 |          | localhost, Apache | ...  |
+| 6       | Local Exploit  | H      | 24.6/24.6 |          | linuxconf         | ...  |
+| 7       | Local Exploit  | H      | 24.7/24.7 |          | linuxconf         | ...  |
 
-* Victim network
-    * Vulnerable Apache Web service on a Linux host (IP: 10.0.0.1)
-    * Host-based IDS (H)
-    * Application-based IDS (A): monitors Apache Web logs for malicious activity
-    * Two different network-based IDSs (N1 and N2)
-* Attack process
-    * Attacker (IP: 31.3.3.7) first portscans host
-        * Discovers vulnerable Apache server (Alerts 2, 3)
-    * During scan a worm (IP: 80.0.0.1) attempts Microsoft IIS exploit and fails (Alert 1)
-    * After scan, attacker exploits Apache buffer overflow (Alerts 4, 5)
-        * Gets interactive  hell as apache user
-    * Using a local exploit against linuxconf, attacker becomes root (Alerts 6, 7)
-    * Desired output of correlation: Single meta-alert for a multi-step attack against victim host
-        * Step 1: Initial scanning (Alerts 2, 3)
-        * Step 2: Remote attack against web server (Alerts 4, 5)
-        * Step 3: Privilege escalation (Alerts 6, 7)
-    * Alert 1 should be discarded as irrelevant
+* 被攻击的网络
+    * Linux 主机上易受攻击的 Apache Web 服务器 （IP: 10.0.0.1）
+    * 基于主机的 IDS（H）
+    * 基于应用程序的 IDS（A）：监视 Apache Web 日志是否存在恶意活动
+    * 两种不同的基于网络的 IDS（N1 和 N2）
+* 攻击过程
+    * 首先，攻击者（IP：31.3.3.7）扫描主机端口
+        * 发现易受攻击的 Apache 服务器（警报2,3）
+    * 扫描过程中，蠕虫（IP：80.0.0.1）尝试 exploit Microsoft IIS 并失败（警报1）
+    * 扫描后，攻击者利用 Apache 缓冲区溢出漏洞（警报4,5）
+        * 获取 Apache 用户的交互 shell
+    * 针对 linuxconf 发起本地攻击，攻击者成为 root用户（警报6,7）
+* 期望的关联结果
+    * 对受害主机的多步攻击组成的单一元警报
+    * 步骤1：初始扫描（警报2,3）
+    * 步骤2：针对 Web 服务器的远程攻击（警报4,5）
+    * 步骤3：提权（警报6,7）
+* 警报1为无关紧要的警报，应该丢弃
 
-### Alert Normalization
+### 警报标准化
 
-| AlertID | Name         | Sensor | Start/End | Source   | Target   | Tag |
-| ------- | ------------ | ------ | --------- | -------- | -------- | --- |
-| 2       | **Portsacn** | N2     | 10.1/14.8 | 31.3.3.7 | 10.0.0.1 |     |
+| 攻击 ID | 名称         | 报警器 | 起止时间  | 来源     | 目标     | 标签 |
+| ------- | ------------ | ------ | --------- | -------- | -------- | ---- |
+| 2       | **Portsacn** | N2     | 10.1/14.8 | 31.3.3.7 | 10.0.0.1 | ...  |
 
-* Goal: Unify alert formats form different types of sensors
-    * Not need to normalize for only one type of sensor
-* Intrusion Detection Message Exchange Format (IDMEF)
-    * Proposed by the Internet Engineering Task Force
-* Implemented using wrapper modules for different IDSs
+* 目标:统一不同类型传感器警报格式
+    * 只有一种类型的传感器不需要标准化
+* 入侵检测消息交换格式（Intrusion Detection Message Exchange Format，IDMEF）
+    * 由 Internet Engineering Task Force 提出
+* 由不同的 IDS 包装模块实现
 
-| Alert Attribute | Description                                                |
-| --------------- | ---------------------------------------------------------- |
-| alertid         | A unique ID identifying the alert                          |
-| analyzertime    | The time when the IDS sent the alert                       |
-| attackernodes   | The set of nodes where the attack originated               |
-| attackgraph     | A graph showing the progress of complex attacks            |
-| consequence     | A set of systems that are affected by this attack          |
-| createtime      | The time when the IDS generated the alert                  |
-| detecttime      | The time when the IDS detected the attack                  |
-| end_time        | The time when the attack ended                             |
-| name The        | name of the attack                                         |
-| priority        | A value indicating how important the attack is             |
-| receivedtime    | The time the alert was received by the correlator          |
-| reference       | A set of references to other alerts                        |
-| sensomode       | The node at which the IDS that generated the alert runs    |
-| start_time      | The time when the attack started                           |
-| type            | The attack type (Reconnaissance, Breakin, Escalation, DoS) |
-| verified        | If the attack was successful (true, false, unknown)        |
-| victimnodes     | The set of nodes that were victims of the attack           |
-| victimprocess   | The full path of the process that was attacked             |
-| victimservice   | Port number and protocol of the service that was attacked  |
+| 警报属​​性    | 描述                                                 |
+| ------------- | ---------------------------------------------------- |
+| alertid       | 识别警报的唯一ID                                     |
+| analyzertime  | IDS发送警报的时间                                    |
+| attackernodes | 发起攻击的节点集合                                   |
+| attackgraph   | 显示复杂攻击进度的图表                               |
+| consequence   | 受本次攻击影响的系统集                               |
+| createtime    | IDS生成警报的时间                                    |
+| detecttime    | IDS检测到攻击的时间                                  |
+| end_time      | 攻击结束的时间                                       |
+| name The      | 攻击名                                               |
+| priority      | 攻击的重要程度                                       |
+| receivedtime  | 关联器收到警报的时间                                 |
+| reference     | 对其他警报的引用                                     |
+| sensomode     | 生成警报的IDS运行的节点                              |
+| start_time    | 攻击开始的时间                                       |
+| type          | 攻击类型（Reconnaissance，Breakin，Escalation，DoS） |
+| verified      | 攻击是否成功（真，假，未知）                         |
+| victimnodes   | 攻击受害者的节点                                     |
+| victimprocess | 被攻击的进程的完整路径                               |
+| victimservice | 受到攻击的服务的端口号和协议                         |
 
-### Alert Preprocessing
+### 警报预处理
 
-| AlertID | Name          | Sensor | Start/End | Source       | Target                             | Tag |
-| ------- | ------------- | ------ | --------- | ------------ | ---------------------------------- | --- |
-| 5       | Bad Request   | A      | 22.1/22.1 | **10.0.0.1** | **10.0.0.1** ~~localhost~~, Apache |     |
-| 6       | Local Exploit | H      | 24.6/24.6 | **10.0.0.1** | **10.0.0.1**, linuxconf            |     |
-| 7       | Local Exploit | H      | 24.7/24.7 | **10.0.0.1** | **10.0.0.1**, linuxconf            |     |
+| 攻击 ID | 名称          | 报警器 | 起止时间  | 来源         | 目标                               | 标签 |
+| ------- | ------------- | ------ | --------- | ------------ | ---------------------------------- | ---- |
+| 5       | Bad Request   | A      | 22.1/22.1 | **10.0.0.1** | **10.0.0.1** ~~localhost~~, Apache | ...  |
+| 6       | Local Exploit | H      | 24.6/24.6 | **10.0.0.1** | **10.0.0.1**, linuxconf            | ...  |
+| 7       | Local Exploit | H      | 24.7/24.7 | **10.0.0.1** | **10.0.0.1**, linuxconf            | ...  |
 
-* Some necessary fields are omited
-    * Start/End-time
-    * Attck Source/Target
-    * Additional Information
-* Goal: Supply missing alert attributes as accurately as possible
-    * Use several heuristics
+* 一些必要的字段被省略
+    * 起止时间
+    * 攻击来源/目标
+    * 附加信息
+* 目标：尽可能准确地提供缺少的警报属性
+    * 使用多种启发式
 
-### Alert Fusion
+### 警报融合
 
-| AlertID | Name           | Sensor       | Start/End     | Source       | Target       | Tag        |
+| 攻击 ID | 名称           | 报警器       | 起止时间      | 来源         | 目标         | 标签       |
 | ------- | -------------- | ------------ | ------------- | ------------ | ------------ | ---------- |
 | 2       | Scanning       | N2           | 10.1/14.8     | 31.3.3.7     | 10.0.0.1     | correlated |
 | 3       | Portsacn       | N1           | 10.0/15.0     | 31.3.3.7     | 10.0.0.1     | correlated |
 | **8**   | **Meta-Alert** | **{N1, N2}** | **10.8/14.8** | **31.3.3.7** | **10.0.0.7** | **{2, 3}** |
 
-* Goal: Combine alerts representing independent detection of a same attack by different IDSs
-    * Combine related alerts not related attacks
-    * Not combine alerts produced by the same sensor
-* Fusion: Temporal difference between alerts and information they contain
-    * Keep sliding time window of alerts
-        * Low window size causes related alerts to escape fusion
-    * Alerts within the time window stored in a time-ordered queue
-    * Upon new alert, compared to alerts in queue
-    * Match if all overlapping attributes are equal and new alert is produced by a different sensor
-    * Upon a match, alerts are merged; resulting meta-alert replaces the matched alert in the queue
-        * New timestamp: earlier start/end-time
+* 目标:组合不同的 IDS 对同一攻击独立检测出的警报
+    * 不能合并同一传感器产生的警报
+* 融合:警报与其包含的信息之间的时间差异
+    * 维持警报的滑动时间窗口
+        * 窗口小会导致相关警报逃避融合
+    * 时间窗口内的警报存储为时间序列
+    * 更新警报时，与序列中已经存在的警报相比较
+    * 如果所有重叠属性相同，并且新警报由不同的传感器产生，则匹配成功
+    * 匹配成功后，合并警报; 生成的元警报会替换队列中被匹配上的警报
+        * 新时间戳：较早的起止时间
 
-### Alert Verification
+### 警报验证
 
-| AlertID | Name        | Sensor | Start/End | Source   | Target            | Tag             |
+| 攻击 ID | 名称        | 报警器 | 起止时间  | 来源     | 目标              | 标签            |
 | ------- | ----------- | ------ | --------- | -------- | ----------------- | --------------- |
 | 1       | IIS Exploit | N1     | 12.0/12.0 | 80.0.0.1 | 10.0.0.1, port:80 | **nonrelevant** |
 
-* Three types Alert
-    * True positive
-    * Irrelevant positive
-        * Failed attack
-    * False positive
-* Goal: Extending intrusion detection signatures with an expected "outcome" of the attack
-    * Real-time verification
-    * Visible and verifiable traces left by attack
-    * Example: temporary file, outgoing connection
-* Passive techniques
-    * Depend on the priori information
-        * Whether the attack target:
-            * Exist
-            * Running
-            * Reachable
-            * Reassemble the packets as expected by the intruder
-    * Advantage
-        * Not interfere with the normal operation
-    * Disadvantage
-        * Knowledge base/priori information undated not in time
-        * Limitation of the type of information
-* Active techniques
-    * Looking for the evidence of the success of an attack
-        * Established network connection
-        * Unknown ports opened (backdoor)
-    * Vulnerability scanners
-        * Advantage
-            * Information is current
-        * Disadvantage
-            * Visible on the network
-            * Consume network resources
-            * Cause crash
-            * Raise alarm, should be excluded
-    * Remote login
-        * Advantage
-            * Gather high-quality data
-        * Disadvantage
-            * Configure the target machine
+* 三种警报
+    * 真实警报
+    * 无关的真实警报
+        * 失败的攻击
+    * 假警报
+* 目标：用预计的攻击“结果”来扩展入侵检测签名
+    * 实时验证
+    * 攻击留下的可见和可验证的痕迹
+    * 例如：临时文件，传出连接
+* 被动技术
+    * 依赖于先验信息
+        * 攻击目标是否
+            * 存在
+            * 在运行
+            * 可到达
+            * 按照入侵者的预期重新组装数据包
+    * 优点
+        * 不干扰正常操作
+    * 缺点
+        * 知识库/先验信息更新不及时
+        * 受信息类型的限制
+* 主动技术
+    * 寻找攻击成功的证据
+        * 建立的网络连接
+        * 打开的未知端口（后门）
+    * 漏洞扫描程序
+        * 优点
+            * 信息是最新的
+        * 缺点
+            * 在网络上可见
+            * 消耗网络资源
+            * 导致崩溃
+            * 发出假警报
+    * 远程登录
+        * 优点
+            * 收集高质量的数据
+        * 缺点
+            * 要配置目标机器
 
-### Attack Thread Reconstruction
+### 攻击线程重建
 
-| AlertID | Name           | Sensor       | Start/End     | Source       | Target                  | Tag                    |
+| 攻击 ID | 名称           | 报警器       | 起止时间      | 来源         | 目标                    | 标签                   |
 | ------- | -------------- | ------------ | ------------- | ------------ | ----------------------- | ---------------------- |
 | 4       | Apache Exploit | N1           | 22.0/22.0     | 31.3.3.7     | 10.0.0.1 port:80        | **correlated**         |
 | 6       | Local Exploit  | H            | 24.6/24.6     | 10.0.0.1     | 10.0.0.1, linuxconf     | **correlated**         |
@@ -279,66 +289,66 @@
 | **9**   | **Meta-Alert** | **{N1, N2}** | **10.8/22.0** | **31.3.3.7** | **10.0.0.7, port:80**   | **{4, 8}**             |
 | **10**  | **Meta-Alert** | **H**        | **24.6/24.7** | **10.0.0.1** | **10.0.0.1, linuxconf** | **{6, 7}**             |
 
-* Goal: Combines a series of alerts due to attacks by one attacker against a single target
-* Merging alerts with equivalent source and target attributes in temporal proximity
-    * Set time windows: 120s
-* Reduce a lot of alerts caused by brute-force attack
+* 目标：把由单个攻击者对单个目标发动攻击而引发的一系列警报组合到一起
+* 合并时间邻近，源和目标等效的警报
+    * 设定时间窗口：120s
+* 减少暴力攻击造成的大量警报
 
-### Attack Session Reconstruction
+### 攻击会话重建
 
-| AlertID | Name           | Sensor          | Start/End     | Source                   | Target                        | Tag                    |
+| 攻击 ID | 名称           | 报警器          | 起止时间      | 来源                     | 目标                          | 标签                   |
 | ------- | -------------- | --------------- | ------------- | ------------------------ | ----------------------------- | ---------------------- |
 | 5       | Bad Request    | A               | 22.1/22.1     | 10.0.0.1                 | 10.0.0.1, Apache              | **correlated**         |
 | 9       | Meta-Alert     | {N1, N2}        | 10.8/22.0     | 31.3.3.7                 | 10.0.0.7, port:80             | {4, 8}, **correlated** |
 | **11**  | **Meta-Alert** | **{N1, N2, A}** | **10.0/22.1** | **{31.3.3.7, 10.0.0.1}** | **10.0.0.1, port:80, Apache** | **{5, 9}**             |
 
-* Goal: Link network-based alerts to related host-based alerts
-* Rough spatial and temporal correspondence between the alerts
-    * The host-based attack occurs a short time after the network-based attack
-        * Simple but imprecise
-    * Priori information
-        * Prepare for or to be a precondition for another attack
-        * Manually encoded in a knowledge base
-    * Sliding time window with extended timeout model
-        * New related alert arrives, extend timeout
+* 目标：将基于网络的警报关联到相关的基于主机的警报
+* 警报之间的大致的空间和时间对应关系
+    * 基于主机的攻击略晚于基于网络的攻击
+        * 简单但不精确
+    * 先验信息
+        * 另一次攻击的准备或先决条件
+        * 相关信息手动编入知识库
+    * 具有扩展超时模型的滑动时间窗口
+        * 新相关的警报到达，延长超时
 
-### Attack Focus Recognition
+### 攻击焦点识别
 
-* Goal: identify hosts that are either the source or the target of a substantial number of attacks
-    * DDoS: many2one
-    * Port scan: one2many
+* 目标：确定可能是大量攻击的来源或目标的主机
+    * DDoS：多对一
+    * 端口扫描：一对多
 
-### Multistep Correlation
+### 多步关联
 
-| AlertID | Name           | Sensor             | Start/End     | Source                   | Target                                   | Tag                   |
+| 攻击 ID | 名称           | 报警器             | 起止时间      | 来源                     | 目标                                     | 标签                  |
 | ------- | -------------- | ------------------ | ------------- | ------------------------ | ---------------------------------------- | --------------------- |
 | 10      | Meta-Alert     | H                  | 24.6/24.7     | 10.0.0.1                 | 10.0.0.1, linuxconf                      | {6, 7} **correlated** |
 | 11      | Meta-Alert     | {N1, N2, A}        | 10.0/22.1     | {31.3.3.7, 10.0.0.1}     | 10.0.0.1, port:80, Apache                | {5, 9} **correlated** |
 | **12**  | **Meta-Alert** | **{N1, N2, H, A}** | **10.0/24.7** | **{31.3.3.7, 10.0.0.1}** | **10.0.0.1, port:80, Apache, linuxconf** | **{10, 11}**          |
 
-* Goal: identify high-level attack patterns that are composed of several individual attacks
-* Example
-    * Scans a victim host
-    * Breaks into a user account on that host
-    * Escalates privileges to the root
+* 目标：确定由多次单独攻击组成的高级攻击模式
+* 示例
+    * 扫描受害主机
+    * 入侵主机上的用户账户
+    * 提权到 root 用户
 
-### Impact Analysis
+### 影响分析
 
-* Goal: determine the impact of an attack on the proper operation of the protected network
-* Heartbeat monitor
+* 目标:确定攻击对受保护的网络的正常运行的影响
+* 心跳监视器
 
-### Alert Prioritization
+### 警报优先级
 
-* Classify alerts
-* Discard irrelevant or less importance alerts
+* 警报分类
+* 舍弃不重要或无关的警报
 
-| Priority | AlertID | Description               | Tag         | Reference |
-| -------- | ------- | ------------------------- | ----------- | --------- |
-| High     | 12      | Multistep Attack Scenario |             | {11, 10}  |
-| Low      | 2-11    | ...                       | correlated  | ...       |
-| Low      | 1       | IIS Exploit               | nonrelevant |           |
+| 优先级 | 攻击 ID | 描述                      | 目标        | 来源     |
+| ------ | ------- | ------------------------- | ----------- | -------- |
+| High   | 12      | Multistep Attack Scenario |             | {11, 10} |
+| Low    | 2-11    | ...                       | correlated  | ...      |
+| Low    | 1       | IIS Exploit               | nonrelevant | ...      |
 
-## Reference
+## 参考资料
 
 * A Comprehensive Approach to Intrusion Detection Alert Correlation, Valeur et al, 2004
 * Lecture 20

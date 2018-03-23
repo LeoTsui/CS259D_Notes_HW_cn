@@ -1,17 +1,11 @@
 # A Simple Sketching Algorithm for Entropy Estimation over Streaming Data
 
-## Background Knowledge and Insight
+<!-- TOC -->
 
-## Goal and Contribution
+- [References](#references)
 
-## Data
+<!-- /TOC -->
 
-## Feature
-
-## Architecture
-
-## Limitation
-
-## Reference
+## References
 
 * A simple sketching algorithm for entropy estimation over streaming data

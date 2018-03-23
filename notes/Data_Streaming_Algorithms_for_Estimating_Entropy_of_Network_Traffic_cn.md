@@ -2,139 +2,137 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Goal](#goal)
-- [Data Source](#data-source)
-- [Formulation](#formulation)
-    - [Notation](#notation)
-    - [Relative Error](#relative-error)
-    - [Approximation Algorithm](#approximation-algorithm)
-- [Lower Bound](#lower-bound)
-- [Algorithm](#algorithm)
-    - [Streaming Algorithm](#streaming-algorithm)
-    - [Sieving Algorithm](#sieving-algorithm)
-- [Reference](#reference)
+- [背景信息和启发](#背景信息和启发)
+- [论文目标](#论文目标)
+- [数据来源](#数据来源)
+- [公式](#公式)
+    - [记号](#记号)
+    - [相对误差](#相对误差)
+    - [近似算法](#近似算法)
+- [下界](#下界)
+- [算法](#算法)
+    - [流算法](#流算法)
+    - [筛分算法](#筛分算法)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景信息和启发
 
-* Network traffic flow analysis
-    * Volume-based analysis
-    * Distribution-based analysis
-        * More succinct
-        * Requires appropriate metrics to encapsulate and capture features
-* Entropy of distribution
-    * Moment Method
-        * the mean, standard deviation, skewness, kurtosis, etc.
-    * Two significant benefits
-        * Increase sensitivity
-        * Additional diagnostic information
-    * Offer distancd information
-* Hard Task
-    * Processing capacity
-    * Memory
-        * Impossible to processing per flow
-    * Sampling
-        * Trade off accuracy for efficiency
-* **Estimating the entropy shares structural similarity with estimating the frequency moments**
-* **Separating the high-frequency (elephant) flows from the  low-frequency (mice) flows**
+* 网络流量数据流分析
+    * 基于量的分析
+    * 基于分布的分析
+        * 更加简洁
+        * 需要适当的标准来封装和捕获特征
+* 衡量分布
+    * 矩方法
+        * 均值，标准差，偏度，峰度等
+    * 熵
+        * 提高灵敏度
+        * 附加的诊断信息
+        * 簇（流量）间的信息距离
+* **熵估计和频率矩估计有相似性的结构**
+* **大流量（大象）和较小流量（小鼠）之间的流量分布通常有清晰的界限**
 
-## Goal
+## 论文目标
 
-* Data streaming algorithm
-    * Compute the entropy
-    * Lightweight
-        * Memory
-        * Computational complexity
-* First algorithm
-    * Estimating the entropy shares structural similarity with estimating the frequency moments
-    * Identification of appropriate estimator functions for calculating the entropy accurately
-    * Providing proofs of approximation guarantees and resource usage
-* Second algorithm
-    * Build on the base streaming algorithm
-    * Separating the large (elephant) flows from the small (mice) flows
+* 数据流算法
+    * 计算信息熵
+    * 轻量级
+        * 存储
+        * 计算复杂度
+* 第一种算法
+    * 熵估计和频率矩估计有相似性的结构
+    * 为精确计算信息熵提供恰当的估计函数
+    * 为计算的近似度和使用的资源提供理论证明
+* 第二种算法
+    * 由基础的流算法构建
+    * 将大流量（大象）与小流量（小鼠）分开
 
-## Data Source
+## 数据来源
 
-| Trace                      | Period | Bins         | TCP packets / bin | Distinct IP / bin | Ports / bin |
-| -------------------------- | ------ | ------------ | ----------------- | ----------------- | ----------- |
-| University Trace (Trace 1) | 1 Hour | 1 min epochs | 1.7M              | 30267             | 15165       |
-| Department Trace (Trace 2) | 5 Hour | 5 min epochs | 0.5M              | 2587              | 4672        |
-| University Trace (Trace 3) | 1 Hour | 1 min epochs | 2.5M              | 25565             | 8080        |
+| 记录                       | 持续时间 | Bins         | TCP 数据包 / bin | 不同的 IP / bin | 端口 / bin |
+|----------------------------|----------|--------------|------------------|-----------------|------------|
+| University Trace (Trace 1) | 1 Hour   | 1 min epochs | 1.7M             | 30267           | 15165      |
+| Department Trace (Trace 2) | 5 Hour   | 5 min epochs | 0.5M             | 2587            | 4672       |
+| University Trace (Trace 3) | 1 Hour   | 1 min epochs | 2.5M             | 25565           | 8080       |
 
-## Formulation
+## 公式
 
-### Notation
+### 记号
 
-* $$[n]=\{1,2,3,...,n\}$$, set of all items come over the stream
-    * $$n$$ can be various when measuring different features
-        * Port
-        * Source or destination addresses
-* $$m_i$$, the frequency of item $$i \in [n]$$
-* $$m$$, the total number of items in the stream
+* $$[n]=\{1,2,3,...,n\}$$，数据流中所有项目的集合
+    * $$n$$ 随不同的特征变化而变化
+        * 端口
+        * 流入流出地址
+* $$m_i$$，项目 $$i$$ （$$i \in [n]$$）的频率
+* $$m$$，数据流中项目的总数量
     * $$m = \sum_{i=1}^n m_i$$
-* $$a_j \in [n]$$, the $$j\text{th}$$ item obersved in the stream
-* $$n_0$$, $$\#$$ distince items appeared in the stream
-    * not all $$n$$ items are present
+* $$a_j \in [n]$$，数据流中第 $$j\text{th}$$ 个观测到的项目
+* $$n_0$$，出现在数据流中的不同的项目的数量
+    * $$n$$ 个项目不是都存在
 * $$n \gg m$$
-* $$H \equiv - \sum_{i=1}^n \frac{m_i}{m} \log \frac{m_i}{m}$$, entropy(sample entropy)
-$$H = \log m - \frac{1}{m} \sum_i m_i \log m_i$$
+* $$H \equiv - \sum_{i=1}^n \frac{m_i}{m} \log \frac{m_i}{m}$$
 
-### Relative Error
+<p align="center">$$H = \log m - \frac{1}{m} \sum_i m_i \log m_i$$</p>
+
+### 相对误差
 
 * $$S \equiv \sum_i m_i \log m_i$$
-$$H = \log m - \frac{S}{m}$$
+
+<p align="center">$$H = \log m - \frac{S}{m}$$</p>
+
 * $$\vert S - \tilde{S} \vert / S$$
-    * $$S$$, true value
-    * $$\tilde{S}$$, estimated value
-* $$\tilde{H} = \log m - \tilde{S} / m$$, estimated value of $$H$$
-* $$S$$ with relative error at most $$\epsilon$$
+    * $$S$$，真实值
+    * $$\tilde{S}$$，估计值
+* $$\tilde{H} = \log m - \tilde{S} / m$$，$$H$$ 的估计值
+* $$S$$ 的相对误差最大不超过 $$\epsilon$$
     * $$(1-\epsilon)S \le \tilde{S} \le (1+\epsilon)S$$
-$$\frac{\vert H - \tilde{H} \vert}{H} \le \epsilon \frac{S}{H m} $$
 
-### Approximation Algorithm
+<p align="center">$$\frac{\vert H - \tilde{H} \vert}{H} \le \epsilon \frac{S}{H m}$$</p>
 
-* $$(\epsilon, \delta)$$-Approximation Algorithm
-    * $$X$$, real values
-    * $$\tilde{X}$$, estimated values
-    * Given a relative error of at most $$\epsilon$$ with probability at least $$1-\delta$$ 
-    * s.t.
-$$P(\vert X - \tilde{X} \vert \le X \epsilon) \ge 1-\delta$$
+### 近似算法
 
-## Lower Bound
+* $$(\epsilon, \delta)$$-近似算法
+    * $$X$$，真实值
+    * $$\tilde{X}$$，估计值
+    * 相对误差小于给定上限  $$\epsilon$$ 的概率应大于 $$1-\delta$$ 
+        * s.t. $$P(\vert X - \tilde{X} \vert \le X \epsilon) \ge 1-\delta$$
 
-* $$H \le \alpha \log m$$
-$$O(\log m)$$
-* Observed errors on the traffic traces are much smaller than the theoretical guarantees
-    * Alogrithm must guarantee the error bound for any stream with any distribution. 
-    * Real packet traces have considerable underlying structure
+## 下界
 
+* $$H \le \alpha \log m$$，$$O(\log m)$$
+* 在流量记录上观测到的误差远小于理论保证
+    * 算法必须保证错误边界能适应任何数据流任何数据分布
+    * 实际的数据包包含相当多的基础架构
 
-## Algorithm
+## 算法
 
-### Streaming Algorithm
+### 流算法
 
-* Alon–Matias–Szegedy frequency moment estimation algorithm
-* Three stages
-    1. Pre-processing stage
-        * Selsect random locations
-        * Decide counters
-    2.  Online stage
-        * Keep an exact counter for the number of subsequent occurrences of that item
-            * Select position $$k$$
-            * Keep exact counter, $$\alpha _k$$, for the items' location between position $$k$$ and $$m$$
-    3. Post-processing stage
-        * Use various counters to obtain an estimator for the $$S$$ value for the stream
+* Alon–Matias–Szegedy 频率矩估计算法
+* 三个阶段
+    1. 预处理阶段
+        * 随机选择位置
+        * 决定计数器
+    2. 线上阶段
+        * 统计这个项目后续出现次数
+            * 选择一个位置 $$k$$
+            * 为位于 $$k$$ 和 $$m$$ 之间的项目提供计数器 $$\alpha _k$$
+    3. 后续处理阶段
+        * 使用各种计数器，为数据流提供一个 $$S$$ 的估计值
 
-### Sieving Algorithm
+### 筛分算法
 
-* Online stage
-    * Sieve the elephants from the mice
-        * Threshold = 2
-* Post-processing stage
+* 线上阶段
+    * 从“小鼠”中挑出“大象”
+        * 阈值 = 项目出现 2 次
+    * 为“大象”计算第一次和第二次抽样之间的次数
+        * 假设实例均匀分布
+        * 连续的采样点间，实例出现次数应该相等
+* 后续处理阶段
     * $$S_\text{elephant} + S_\text{mice}$$
 
-## Reference
+## 参考资料
 
 * Lall, et all 2006. Data Streaming Algorithms for Estimating Entropy of Network Traffic

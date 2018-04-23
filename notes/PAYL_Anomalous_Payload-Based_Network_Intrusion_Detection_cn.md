@@ -2,146 +2,143 @@
 
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Goal](#goal)
-- [Data](#data)
-- [Feature](#feature)
-- [PAYL (Payload Modeling and Anomaly Detection)](#payl-payload-modeling-and-anomaly-detection)
-    - [Length Conditioned n-Gram Payload Model](#length-conditioned-n-gram-payload-model)
-    - [Simplified Mahalanobis Distance](#simplified-mahalanobis-distance)
-    - [Incremental Learning](#incremental-learning)
-    - [Reduced Model Size by Clustering](#reduced-model-size-by-clustering)
-    - [Unsupervised learning](#unsupervised-learning)
-    - [Z-string](#z-string)
-- [Limitation](#limitation)
-- [Reference](#reference)
+- [背景信息和本文目标](#背景信息和本文目标)
+- [数据](#数据)
+- [特征](#特征)
+- [PAYL](#payl)
+    - [给定长度的 n-Gram 载荷模型](#给定长度的-n-gram-载荷模型)
+    - [简化的 Mahalanobis 距离](#简化的-mahalanobis-距离)
+    - [增量学习](#增量学习)
+    - [通过聚类缩小模型大小](#通过聚类缩小模型大小)
+    - [无监督学习](#无监督学习)
+    - [Z串](#z串)
+- [局限性](#局限性)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景信息和本文目标
 
-* Available IDS failed on
+* 现有的 IDS 失败于
     * 0-day
-    * Slow and stealthy worm propagation
+    * 缓慢且隐蔽的蠕虫传播
+* 检测通过网络传播的 0-day 蠕虫或病毒代码的第一次出现
+    * 签名失效
+    * 缓慢隐蔽的蠕虫病毒传播能避免在网络中爆发，或被检测
+    * 需要基于载荷的检测
 
-## Goal
+## 数据
 
-* Detect first occurrences of zero-day worms or new malicious codes delivered via network
-    * Signatures not effective
-    * Slow/stealthy worm propagation can avoid bursts in network traffic flows or probes
-    * Requires payload based detection
+* 1999 DARPA IDS 数据集
+* CUCS 数据集
+* 数据单元
+    * 全部数据包
+    * 数据包的前 100 字节
+    * 数据包的最后 100 字节
+    * 全部链接数据
+    * 链接的前 1000 字节
 
-## Data
+## 特征
 
-* 1999 DARPA IDS dataset
-* CUCS dataset
-* Smoothing factor = 0.001
-* Data units
-    * Full packet
-    * First 100 bytes of packet
-    * Last 100 bytes of packet
-    * Full connection
-    * First 1000 bytes of connection
+* 每一个频率的方差和均值
 
-## Feature
+## PAYL
 
-* Mean and variance of each frequency
+* 设计标准和运行目标
+    * 无需人工敢于
+    * 普遍适用于任意系统和服务
+    * 增量更新以适应不断变化或漂移的环境
+    * 低 FP
+    * 在高带宽的环境下，进行低延迟，高效的实时操作
 
-## PAYL (Payload Modeling and Anomaly Detection)
+### 给定长度的 n-Gram 载荷模型
 
-* Design criteria and operating objectives
-    * Hands-free
-    * Generality for any service or system
-    * Incremental update to accommodate changing or drifting environments
-    * Low FP
-    * High bandwidth environments, low latency, efficient real-time operation
-
-### Length Conditioned n-Gram Payload Model
-
-* Cluster streams
-    * Port number
-        * Proxy for application
-            * 21, 22, 80, etc.
-    * Packet length range
-        * Proxy for type of payload
-            * Larger payloads contain media or binary data
-    * Direction of stream
-        * Inbound
-        * Outbound
-* Measurement: n-gram frequencies
-    * Length $$L$$: frequency $$= \#$$ of occurrences $$/ (L-n+1)$$
-    * Use $$n = 1$$: 256 ASCII characters
-* $$i$$, observed length bin
-* $$j$$, port number
-* $$M_{ij}$$, average byte frequency and the standard deviation of each byte’s frequency
+* 数据流集簇
+    * 端口号
+        * 代表不同的应用
+            * 21，22，80 等等
+    * 数据包的长度范围
+        * 代表载荷的类型
+            * 较大的有效载荷包含多媒体或二进制数据
+    * 数据流的方向
+        * 流入
+        * 流出
+* 度量：$$n \text{-gram}$$ 的频率
+    * 给定数据包长度 $$L$$，频率 $$=$$ 出现的次数 $$/ (L-n+1)$$
+    * 使用 $$n = 1$$，即 256 个 ASCII 字符
+* $$i$$，观测到的长度 bin
+* $$j$$，端口号
+* $$M_{ij}$$，字节频率的均值和标准差
 
 
-### Simplified Mahalanobis Distance
+### 简化的 Mahalanobis 距离
 
-* Simplifications
-    * Naïve assumption: Byte frequencies independent
-        * Covariance matrix becomes diagonal
-    * Replace variance with standard deviation
-        * Avoid time-consuming square and square-root computations
-    * Add smoothing factor
-        * Avoid zero SD and infinite distance
-        * Avoid same frequency
-        * Reflect statistical confidence of sampled training data
-            * larger smoothing factor, less confidence
-* $$x$$, feature vector of the new observation
-* $$\overline{y}$$, averaged feature vector computed from the training dataset
-* $$\overline{\sigma}$$, standard deviation
+* 简化
+    * 简单的假设：字节频率独立相关
+        * 协方差矩阵变成对角线矩阵
+    * 用1范数代替2范数
+        * 避免平方和平方根计算
+    * 附加平滑系数 = 0.001
+        * 避免标准差为零，和无限的距离
+        * 避免相同的频率
+        * 反映抽样训练数据的可信度
+            * 平滑数据较大，可信度较低
+* $$x$$，新观测样本的特征向量
+* $$\overline{y}$$，训练数据集的平均特征向量
+* $$\overline{\sigma}$$，标准差
 * $$d(x, \overline{y}) = \sum_{i = 0}^{n - 1}{|x_i - \overline{y_i}| / ({\overline{\sigma} + \alpha})}$$
-* Intuitive Explanation
-    * **A kind of "normalization" observation examples by "length bin", and summing the results**
-    * For each dimension (observed length bin, $$i$$)
-        * Measure the Euclidean distance between a sample data and the center point
-        * Normalize with smoothed SD
-    * Summation
+* 直观的解释
+    * **把观测样本依长度分入 bin 后做正规化处理，并把结果相加**
+    * 对于每一个维度（长度 bin $$i$$）
+        * 计算样本和中心点的曼哈顿距离
+        * 用平滑过的标准差做正规化处理
+    * 相加求和
 
-### Incremental Learning
+### 增量学习
 
-* Adapt to concept Drift
-* Use streaming measurements for mean and standard deviation
+* 能够适应概念漂移
+* 均值和方差使用流数据衡量方法
 * $$\overline{x} = \overline{x} + {(x_{N + 1} - \overline{x})} / {(N + 1)}$$
-* Store the average of $$x_i^2$$, 256-element array
+* 存储 $$x_i^2$$ 的平均值， 256个元素的数组
 
-### Reduced Model Size by Clustering
+### 通过聚类缩小模型大小
 
-* Fine-grained model problem:
-    * Large total size of model
-        * Similar distributions for near lengths
-    * Insufficient training data for some lengths
-* Solution:
-    * Merge neighboring models
-        * Manhattan distance
-    * Borrow data from neighboring bins
-* For lengths not observed in training data
-    * Use closest length range
-    * Alert on unusual length
+* 细粒度模型问题
+    * 模型总体体积大
+        * 数据包长度相近，分布也类似
+    * 有些长度的数据包训练样本不足
+* 解决方案
+    * 合并相近模型
+        * 曼哈顿距离
+    * 从相邻的 bin 借用数据
+* 对于在训练数据中未观测到的包长度
+    * 使用最接近的长度范围
+    * 对异常长度发出警报
 
-### Unsupervised learning
+### 无监督学习
 
-* Assumption: Attacks are rare and their payload distribution is substantially different from normal traffic
-* Remove training data noise
-    * Apply the learned models to training data
-    * Remove anomalous training samples
-    * Update models
+* 假设：攻击很少，且攻击的载荷与正常通信流量差异很大
+* 消除训练数据噪声
+    * 将学到的模型应用于训练数据
+    * 删除异常训练样本
+    * 更新模型
 
-### Z-string
+### Z串
 
-* Distribution ordered by Zipf law can represent the signature
-* Z-strings of payloads from different match each other
-    * A worm has appeared
+* 特征分布符合 Zipf 定律
+* 来自不同网站的异常载荷的Z串能够互相匹配
+    * 一个新的蠕虫出现了
 
-## Limitation
+## 局限性
 
-* Curse of dimensionality (Maybe not today)
-* Spurious features
-* Not robust against adversaries
-* No focused scope
+* 唯独诅咒
+* 无用的特征
+* 对入侵者
+* 无重点范围
+* 容易被模拟攻击（混合攻击）攻破
 
-## Reference
+## 参考资料
 
 * Anomalous payload-based network intrusion detection, Wang-Stolfo 2004
+* Advanced Polymorphic Worms: Evading IDS by Blending in with Normal Traffic
 * CS 259D Session 12

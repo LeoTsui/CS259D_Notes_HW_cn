@@ -17,7 +17,7 @@
     - [网络钓鱼检测](#网络钓鱼检测)
     - [入侵检测系统（IDS）](#入侵检测系统ids)
     - [深度包检测](#深度包检测)
-    - [多态性](#多态性)
+    - [多态攻击](#多态攻击)
     - [在安全领域使用机器学习](#在安全领域使用机器学习)
     - [机器学习对抗性攻击](#机器学习对抗性攻击)
     - [工业界做客讲座报告](#工业界做客讲座报告)
@@ -99,7 +99,7 @@
     * Lecture 15
     * McPAD : A Multiple Classifier System for Accurate Payload-based Anomaly Detection, Perdisci et al, 2009
 
-### 多态性
+### 多态攻击
 
 * 多态混合攻击，无法为多态攻击建模
     * Lecture 14

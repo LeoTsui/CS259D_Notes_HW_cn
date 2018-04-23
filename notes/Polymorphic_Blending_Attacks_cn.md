@@ -2,259 +2,299 @@
 
 <!-- TOC -->
 
-- [Goal](#goal)
-- [Related Work](#related-work)
-- [Blending Attacks](#blending-attacks)
-    - [Scheme of a polymorphic blending attack (PBA)](#scheme-of-a-polymorphic-blending-attack-pba)
-    - [Polymorphism Attacks](#polymorphism-attacks)
-    - [Polymorphic Blending Attacks](#polymorphic-blending-attacks)
-    - [Steps of Polymorphic Blending Attacks](#steps-of-polymorphic-blending-attacks)
-    - [Attack Packet Design](#attack-packet-design)
-- [Evading PAYL](#evading-payl)
-    - [Evading 1-gram](#evading-1-gram)
-    - [Evading 2-gram](#evading-2-gram)
-- [Experiment Setup](#experiment-setup)
-    - [Attack vector](#attack-vector)
-    - [Dataset](#dataset)
-- [Evaluation](#evaluation)
-        - [PAYL Training](#payl-training)
-    - [Traditional Polymorphic Attacks (CLET)](#traditional-polymorphic-attacks-clet)
-    - [Artificial Profile](#artificial-profile)
-    - [1-gram and 2-gram Attacks](#1-gram-and-2-gram-attacks)
-- [Countermeasures](#countermeasures)
-- [Limitations and Improvements](#limitations-and-improvements)
-- [Reference](#reference)
+- [本文目标](#本文目标)
+- [相关工作](#相关工作)
+- [混合攻击](#混合攻击)
+    - [多态混合攻击方案](#多态混合攻击方案)
+    - [多态性攻击](#多态性攻击)
+        - [多态性](#多态性)
+        - [多态攻击的三部分](#多态攻击的三部分)
+        - [多态攻击检测](#多态攻击检测)
+    - [多态混合攻击（Polymorphic Blending Attacks， PBA）](#多态混合攻击polymorphic-blending-attacks-pba)
+    - [多态混合攻击步骤](#多态混合攻击步骤)
+        - [第一步：学得 IDS 正常的轮廓数据](#第一步学得-ids-正常的轮廓数据)
+        - [第二步：攻击体加密](#第二步攻击体加密)
+        - [第三步：生成多态解密器](#第三步生成多态解密器)
+    - [攻击数据包设计](#攻击数据包设计)
+- [逃避 PAYL](#逃避-payl)
+    - [逃避 1-gram](#逃避-1-gram)
+        - [填充](#填充)
+        - [替换](#替换)
+    - [逃避 2-gram](#逃避-2-gram)
+- [实验设置](#实验设置)
+    - [攻击向量](#攻击向量)
+    - [数据集](#数据集)
+- [评估](#评估)
+    - [PAYL 训练](#payl-训练)
+    - [传统多态攻击（CLET）](#传统多态攻击clet)
+    - [多态混合攻击](#多态混合攻击)
+        - [仿真轮廓数据](#仿真轮廓数据)
+        - [1-gram 和 2-gram 攻击](#1-gram-和-2-gram-攻击)
+- [IDS的对策](#ids的对策)
+- [限制性和改进](#限制性和改进)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Goal
+## 本文目标
 
-* Study polymorphic blending attack
-* Why network anomaly IDS based on payload statistics not work
-* Case study: 1-gram and 2-gram PAYL
+* 研究多态混合攻击
+* 为什么基于载荷统计的网络异常入侵检测系统失效
+* 案例研究：1-gram 和 2-gram PAYL
 
-## Related Work
+## 相关工作
 
-* Polymorphic attacks:
-    * IP/TCP transformations
-    * Mutation exploits (Vigna et al.)
+* 多态攻击
+    * IP/TCP 变换
+    * Mutation exploits（Vigna et al.）
     * Fragroute, Whisker, AGENT, Mistfall, tPE, EXPO, DINA, ADMutate, PHATBOT, JempiScodes
     * CLET
-* Defenses against polymorphism
-    * Looking for executable code (Toth et al.)
-    * Looking for similar structure in multiple code instances (Kruegel et al.)
-    * Looking for common substrings present in multiple code instances (Polygraph) - defeated by noise
-    * Looking for any exploit of a known vulnerability (Shield)
-* Defenses against polymorphism
-    * Looking for instruction semantics, detect known code transformations (Cristodorescu et al.)
-    * Detect sequence of anomalous system calls (Forest et al.) - can be defeated through mimicry attacks. 
-        * New approaches use stack information but they can also be defeated
-    * Payload-based anomaly detection: use length, character distribution, probabilistic grammar and tokens to model HTTP traffic (Kruegel et al.); record byte frequency for each port's traffic (PAYL)
+* 防御多态攻击
+    * 寻找可执行代码（Toth et al.）
+    * 在多个代码实例中寻找相似的结构（Kruegel et al.）
+    * 在多个代码实例中寻找常见的字串（Polygraph）
+        * 被噪音攻击攻破
+    * 寻找任何已知漏洞的 exploit（Shield）
+    * 寻找指令语义，检测已知的代码转换（Cristodorescu et al.）
+    * 检测异常的系统调用序列 （Forest et al.）
+        * 可以通过模拟攻击攻破
+        * 新的方法是用堆栈信息，但同样可以被攻破
+    * 基于负载的异常检测
+        * 使用长度，字符分布，概率语法和令牌来模拟 HTTP 流量（Kruegel et al.）
+        * 分端口记录流量的字节频率( PAYL )
 
-## Blending Attacks
+## 混合攻击
 
-### Scheme of a polymorphic blending attack (PBA)
+### 多态混合攻击方案
 
-![Scheme-of-a-Polymorphic-Blending-Attack-PBA](images\Scheme-of-a-Polymorphic-Blending-Attack-PBA.png "Scheme of a polymorphic blending attack (PBA)")
+![多态混合攻击方案](images\Scheme-of-a-Polymorphic-Blending-Attack-PBA.png "Scheme of a polymorphic blending attack (PBA)")
 
-### Polymorphism Attacks
+### 多态性攻击
 
-* Polymorphism
-    * Disguise the packets as normal traffic
-    * Change the contents of packets to make it look different
-    * Exploit code, not used in normal
-    * **Making attacks look different from each other rather than normal**
-* Attack Vector
-    * Modified part, invariant part
-    * Attack invariant could be
-        * Small
-        * Existing in the normal traffic
-    * Could cause high FP
-* Attack Body (shellcode)
-    * Register shuffling
-    * Equivalent instruction substitution
-    * Instruction reordering
-    * Garbage insertions
-    * Encryption
-* Polymorphic Decryptor
-    * Decrypt shellcode
-    * Code obfuscation
-* Detection of Polymorphic Attacks
-    * Exploit code and/or input data contain some characters that have very low probability of appearing in a normal packet
-    * This deviation can be detected
+#### 多态性
 
-### Polymorphic Blending Attacks
+* 将数据包伪装成正常流量
+* 改变数据包的内容使其看起来彼此互不相同
+* Exploit 代码并不常见
+* **使得攻击看起来互不相同，但并不常见**
 
-* Making attacks looks different from each other rather
-* **Adjust their byte frequency to match that of legitimate traffic (look like normal)**
-* Assumption
-    * The adversary has already compromised a host X inside a network A which communicates with the target host Y inside network B.
-    * The adversary has knowledge of the IDS<sub>B</sub> that monitors the victim host network.
-    * A typical anomaly IDS has a threshold setting that can be adjusted to obtain a desired false positive rate.
-        * Adversary knows the learning algorithm used by IDS of Network B
-        * IDS of Network B is a payload statistics based system
-* Adversary's trade-off
-    * Attack size
-        * Monitor network flow size
-    * Process speed
-        * Attack should be economical in time and space
+#### 多态攻击的三部分
 
-### Steps of Polymorphic Blending Attacks
+* 攻击向量
+    * 分为可变部分和不可变部分
+    * 如果不可变部分的体积小且混杂在正常流量中
+        * 可能导致 IDS 误报率上升
+* 攻击体（shellcode）
+    * 寄存器 shuffling
+    * 等效指令替换
+    * 指令重排
+    * 插入垃圾指令
+    * 加密
+* 多态解码器
+    * Shellcode 解密
+    * 混淆解码器代码
 
-1. Learning The IDS Normal Profile
-    * Sniffing the network traffic
-    * Generates artificial profile
-    * More normal packets captured more closer to the normal profile
-    * Profile
-        * Average size
-        * Rate of packets
-        * Byte frequency distribution
-        * Range of tokens at different offsets
-2. Attack Body Encryption
-    * To match the normal profile
-        * Substituting every character
-        * Padded with some garbage data
-    * Reversible operation
-    * Generated suitable substitution table
-3. Polymorphic Decryptor
-    * Remove padding
-    * re-substitute characters
-    * The decryptor routine is not encrypted but mutated using shellcode polymorphism processing
+#### 多态攻击检测
 
-### Attack Packet Design
+* Exploit 代码或其他输入数据包含一些在正常的数据包中少见的低频字符
+* **这种偏差可以被检测出来**
 
-* Find a normal profile that similar to the attack packet
-    * Character frequency (substitution table)
-        * If no significantly different between new and old substitution tables, replace old by new 
-    * Packet length
-        * Longer than the attack packet
-        * Plan B: divide attack body into multiple small packets
+### 多态混合攻击（Polymorphic Blending Attacks， PBA）
 
+* 使得攻击看起来互不相同
+* **按照合法的流量，调整它们的字节频率（看起来像正常）**
 
-## Evading PAYL
+![PBA攻击假设](images/Attack_Scenario_of_PBA.png)
 
-### Evading 1-gram
+* 实际攻击场景假设
+    * 攻击者入侵了网络 A 中的主机 X，目标主机是网络 B 中的 Y， 网络 A 和 B 互相通信
+    *攻击者对监控被受害的主机网络的 IDS<sub>B</sub> 有所了解
+    * 网络 B 使用基于载荷统计的 IDS（例如 PAYL）
+    * IDS<sub>B</sub> 可以调整设定的阈值从而得到调控误报率
+        * 攻击者不知道 IDS<sub>B</sub> 设置的具体阈值
+        * 攻击者会估计一个普遍适用的误报率，漏报率
+* 攻击者的行动
+    * 控制主机 X
+    * 观测从 X 到 Y 的正常通信
+    * 使用和 IDS<sub>B</sub> 相同的技术建立正常的流量轮廓数据（*仿真轮廓数据*）
+    * 创造变异的实例来匹配仿真轮廓数据
+    * 如果 IDS<sub>B</sub> 无法分辨改变过的数据包，则攻击者攻击成功
+* 攻击者的权衡
+    * 攻击数据大小
+        * 监控网络上数据流的大小
+    * 处理速度
+        * 在时间和空间的利用上应该是划算的
+        * 过高的资源利用可能会导致本地的 IDS（例如，IDS<sub>A</sub> 或者 基于主机的 IDS）发起警报
 
-* **Minimize the maximum frequency difference**
-* Padding
-    * $$\hat{\omega}$$, substituted attack body before padding
-    * $$\acute{\omega}$$, substituted attack body after padding
-    * $$\|\omega\|$$, length of $$\omega$$
-    * $$i$$, idx of characters
-    * $$x$$, characters
-        * $$x_i$$, the $$i^{th}$$ of the characters
-    * $$\lambda$$, $$\#$$ occurrences
-        * $$\lambda_i$$, $$\#$$ occurrences of $$x_i$$
-    * $$\|\acute{\omega}\| = \|\hat{\omega}\| + \sum_{i=1}^n{\lambda_i}$$
-    * $$f(x_i)$$, relative frequency of character $$x_i$$ in normal traffic
-    * $$\hat{f}(x_i)$$, relative frequency of character $$x_i$$ in substituted attack traffic
-    * $$\lambda_i = \|\acute{\omega}\|f(x_i) - \|\hat{\omega}\|\hat{f}(x_i)$$
-    * For some characters, $$f{x_i} < \hat{f}(x_i)$$
-    * **The most frequent such character need not be padded** 
-    * Let $$\delta = \max{(\hat{f}(x_i) / f(x_i))}$$ be the maximum overuse
+### 多态混合攻击步骤
+
+#### 第一步：学得 IDS 正常的轮廓数据
+
+* 嗅探网络流量
+* 生成仿真轮廓数据
+* 捕获更多的正常通信数据，能生成更正常的轮廓数据
+* 配置数据包括
+    * 数据包平均大小，最大值
+    * 数据包的速率
+    * 字节频率分布
+    * Tokens 的偏移范围
+
+#### 第二步：攻击体加密
+
+* 匹配正常的配置数据
+    * 替换每一个数据
+    * 填充一些垃圾数据
+* 可逆操作
+* 生成适当的替换表
+
+#### 第三步：生成多态解密器
+
+* 移除填充数据
+* 替换回原有字符
+* 解密器不加密，但应被变化过
+
+### 攻击数据包设计
+
+* 找到类似于攻击数据包的正常配置文件
+    * 字符频率（替换表）
+        * 如果新旧替代表之间没有显著差异，则用新换旧
+    * 数据包长度
+        * 比攻击包长
+        * 备用方案：将攻击体分成多个小包
+
+## 逃避 PAYL
+
+### 逃避 1-gram
+
+* **最小化最大的频率差距**
+
+#### 填充
+
+* $$\hat{\omega}$$，填充前的替换过的攻击体
+* $$\acute{\omega}$$，填充后的替换过的攻击体
+* $$\|\omega\|$$，$$\omega$$ 的长度
+* $$i$$，字符的次序
+* $$x$$，字符
+    * $$x_i$$，第 $$i$$ 个字符
+* $$\lambda$$，出现的次数
+    * $$\lambda_i$$，$$x_i$$ 出现的次数
+* $$\|\acute{\omega}\| = \|\hat{\omega}\| + \sum_{i=1}^n{\lambda_i}$$
+* $$f(x_i)$$，在正常流量中 $$x_i$$ 的相对频率
+* $$\hat{f}(x_i)$$，在替换过的攻击流量中 $$x_i$$ 的相对频率
+* $$\lambda_i = \|\acute{\omega}\|f(x_i) - \|\hat{\omega}\|\hat{f}(x_i)$$
+* 因为有些字符 $$f(x_i) < \hat{f}(x_i)$$
+    * **频率最高的字符不需要填充** 
+* 设 $$\delta = \max{(\hat{f}(x_i) / f(x_i))}$$ 为超频字符的最大值
     * $$\lambda_i = \|\hat{\omega}\|(\delta f(x_i) - \hat{f}(x_i))$$
-* Substitution
-    * To minimize padding we need to minimize　$$\delta$$
-    * Case 1: attack chars are less numerous than legitimate chars
-        * A greedy algorithm that generates one-to-many mapping
-        * Sort characters by frequency in attack and legitimate Traffic
-        * Match frequencies in decreasing order
-        * Remaining legitimate characters are assigned to attack characters that have highest to bring it down
-    * Case 2: attack chars are more numerous than legitimate chars
-        * A greedy algorithm that generates n-gram-to-one mapping
-        * Construct a Huffman tree where leaves are characters in the attack traffic, and smallest two nodes are iteratively connected (thus most frequent characters have shortest n-gram length)
-        * We must choose the labels for the links so to preserve the original legitimate character frequency
-            * Sort vertices in the tree by weight
-            * Sort legitimate characters by their frequency
-            * Choose the highest frequency character for the highest weight vertex
-            * Remove the vertex from the list and remove the given portion of the character's frequency from further consideration; then resort the characters
 
-### Evading 2-gram
+#### 替换
+    
+* 为了最小化填充量，我们需要最小化 $$\delta$$
+* 情形 1：攻击字符比合法字符少
+    * 生成一对多映射的贪心算法
+    * 按照攻击和合法流量的字符频率
+    * 按降序匹配字符
+    * 剩余的合法字符分配给频率最高的攻击字符使其频率下降
+* 情形 2：攻击字符比合法字符少
+    * 生成多对一映射的贪心算法
+    *构造哈夫曼树，其中子叶子节点是攻击流量中的字符，迭代连接频率最小的节点，这样使得最高频率的字符有最短的路径长度（编码长度）
+    * 为保持原始的合法字符频率，我们必须为边挑选标签（非随机）
+        * 按权重排序树中的顶点
+        * 按频率排序合法字符
+        * 为最高权重顶点分配最高频率字符
+        * 移除该顶点，并从字符频率中减去被分配走的部分，以便后续处理
+        * 重新按频率排序字符
 
-* Must match all 2-byte pairs
-* Represent valid 2-grams as states in FSM
-* A simple approach will enumerate valid paths in FSM and map attack characters to paths randomly but this generates large code size
-    * Better mapping can be obtained by using entropy information, i.e., mapping frequent characters to short paths
-* Another approach will attempt to find single byte mappings so that 2-grams are also matched
-    * Greedy algorithm sorts 2-grams by frequencies in legitimate and attack traffic and matches them greedily taking care not to violate any existing mappings
-* Generate padding so to match the target distribution greedily
+### 逃避 2-gram
 
-## Experiment Setup
+* 必须匹配所有的2-字节对
+* 用 FSM 的状态表示有效的 2-grams
+* 一种简单的方法，枚举SFM中所有的合法路径，把攻击字符随机映射到路径上，但这样会导致较大的代码体积
+    * 按照信息熵能获得更好的映射，例如，把常见字符映射到短路经上
+* 另一个方法：尝试找到单个字符对应的映射，这样 2-grams 映射也得到了匹配
+    * 在不违反以有的映射的情况下，使用贪心算法，排序合法和攻击字符的 2-grams 并进行匹配
+* 由贪心算法生成填充数据，以便匹配目标映射
 
-### Attack vector
+## 实验设置
+
+### 攻击向量
 
 * Windows Media Services (MS03-022)
-    * Exploits a vulnerability with logging of user requests
-* Attacker vector 99 bytes
-    * Presented at the start of the HTTP request
-* For buffer overflow attack must send 10KB of data
-* Attack body opens a TCP connection and sends registry files
-* Size of attack body is 558B and contains 109 unique characters
-* Attack was divided into multiple packets
-    * Divide decryptor into several packets
-* After padding, if final blending attack packet not up to 10KB 
-    * Send normal packets
+    * 通过记录用户请求来实现攻击
+* 攻击向量的大小为 99 字节
+    * 在 HTTP 请求开始时出现
+* 需要发送大约 10KB 的数据以导致缓冲区溢出
+* 攻击体打开一个 TCP 链接 并且发送注册文件
+* 攻击体的大小是 558B 并且包含 109 个唯一的字符
+* 攻击被分装在多个数据包
+    * 每个数据包都有解码器
+* 如果封装后的混合数据包不足 10KB，则发送一些正常数据包
 
-### Dataset
+### 数据集
 
-* Captured 15 days of HTTP traffic
-    * From one department
-    * 14 days' traffic to train the IDS (4,356,565 packets, 1.9GB)
-    * Last day's traffic is used by the attacker to learn character distributions
-    * Only TCP data packets are used that do not contain known attacks
-* IDS builds profiles per packet length
-* Selected three frequent packet sizes for the attack
+* 捕获了 15 天的 HTTP 流量
+    * 来自一个部门
+    * 14天的通信数据用来训练 IDS（4,356,565 个数据包，1.9GB）
+    * 攻击者用最后一天的数据学习字符特征分布
+    * 只使用不包含已知攻击的 TCP 数据包
+* IDS 为数据包分长度构建轮廓数据
+* 为攻击选择三个常见的数据包大小
 
-## Evaluation
+## 评估
 
-#### PAYL Training
+### PAYL 训练
 
-* PAYL training time increases with the size of the training data because new packets carry more unique n-grams
+* PAYL 训练时间随着训练数据的增大而增加，因为新数据包包含更多的不重复的 n-grams
 
-### Traditional Polymorphic Attacks (CLET)
+### 传统多态攻击（CLET）
 
-* Tested CLET-generated polymorphic attacks against PAYL
-    * CLET only adds padding to match byte frequency
-    * Other polymorphic engines perform worse than CLET against PAYL
-    * CLET attack sequence will avoid PAYL detection only  if all packets have an anomaly score above the  threshold
-    * Both 1-gram and 2-gram PAYL detected all attacks  with chosen threshold setting
+* 测试对 PAYL 发起的由 CLET 生成的攻击
+    * CLET 仅添加填充以匹配字节频率
+    * 其余的对 PAYL 发起攻击的多态引擎比 CLET 表现更差
+    * 只有当所有数据包的异常分数高于阈值时，CLET 才能避免被 PAYL 检测出来
+    * 设置好阈值，1-gram 和 2-gram 版的 PAYL 都可以检测出所有攻击
 
-### Artificial Profile
+### 多态混合攻击
+    
+#### 仿真轮廓数据
 
-* Training of the artificial profile is stopped when there is no significant improvement over existing profile (measured using Manhattan distance)  within two packets
-* Number of packets required for convergence
+* 当两个数据包现有的轮廓数据没有明显改变时（用曼哈顿距离衡量），停止训练仿真轮廓数据
 
-### 1-gram and 2-gram Attacks
+#### 1-gram 和 2-gram 攻击
 
-* For 1-gram attacks used one-to-one substitution cipher
-* For 2-gram attacks used single byte encoding scheme
-    * Two types of transformations were tested
-    * Substitution table is constructed for entire attack body - global substitution
-    * Substitution table is constructed for each packet separately - local substitution
-    * If attack characters are more numerous than those in legitimate traffic, non-existing characters were used
-* 2-gram IDS had consistently higher anomaly scores for attacks but it also had higher  thresholds to avoid false positives
-    * Overall similar performance as 1-gram IDS
-    * More costly for IDS
-* Local substitution always outperformed global  substitution
+* 对于 1-gram 攻击，使用一对一的编码表
+* 对于 2-gram 攻击，使用单字节的编码方案
+    * 测试两种替代方式
+    * 全局替代
+        * 为整个攻击体构建编码表
+        * 用单个解码表解码整个数据流
+    * 局部替代
+        * 为数据报构建编码表
+        * 一个数据包对应一个解码表
+        * 填充数据的空间减少
+    * 如果攻击字符比合法字符多，就是用不存在的字符
+* 2-gram IDS 对攻击普遍给出了较高的分数，但也要为避免误报设置较高的阈值
+    * 总体表现和 1-gram IDS 相似
+    * IDS 开销更高
+* 局部替代要优于全局替代
 
-## Countermeasures
+## IDS的对策
 
-* Models
-    * More complex models
-    * Blend more models
-* Features
-    * syntactic and semantic information
-* High speed hardware
-* Introduce randomness
-    * Random feature
+* IDS 模型
+    * 更加复杂的模型
+    * 混合更多模型
+* 特征
+    * 句法和语义信息
+* 更高的硬件性能
+* 衡量随机性
 
-## Limitations and Improvements
+## 限制性和改进
 
-* PAYL is the only case study
-* Are the assumption of PBA are realistic
-* Explore techniques for continuous data streams
+* PAYL 是唯一的研究案例
+* 对 PBA 的假设是否现实
+* 探究适用于连续数据流的技术
 
-## Reference
+## 参考资料
 
 * Polymorphic Blending Attacks, Fogla et al, 2006
 * [CDA6938 Special Topic:Research in Computer and Network Security (Spring 2007)](http://www.cs.ucf.edu/~czou/CDA6938/Polymorphic_blending_attacks_Himanshu_Pagey.ppt)

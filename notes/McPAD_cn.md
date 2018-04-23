@@ -2,72 +2,72 @@
 
 <!-- TOC -->
 
-- [Goal and Contribution](#goal-and-contribution)
-- [Architecture](#architecture)
-    - [One-class SVM](#one-class-svm)
-    - [Fusion rules](#fusion-rules)
+- [本文目标和贡献](#本文目标和贡献)
+- [模型体系](#模型体系)
+    - [单分类 SVM](#单分类-svm)
+    - [融合规则](#融合规则)
     - [McPAD](#mcpad)
-    - [Attacks](#attacks)
-- [Data](#data)
-- [Limitation](#limitation)
-- [Reference](#reference)
+    - [攻击手段](#攻击手段)
+- [数据](#数据)
+- [局限性](#局限性)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Goal and Contribution
+## 本文目标和贡献
 
-* Improve $$2$$-grams
+* 提高 $$2$$-grams 方法
 
-## Architecture
+## 模型体系
 
-### One-class SVM
+### 单分类 SVM
 
-* [Introduction to One-class Support Vector Machines](http://rvlasveld.github.io/blog/2013/07/12/introduction-to-one-class-support-vector-machines/)
+* 单分类 SVM 简介：[Introduction to One-class Support Vector Machines](http://rvlasveld.github.io/blog/2013/07/12/introduction-to-one-class-support-vector-machines/)
 
-### Fusion rules
+### 融合规则
 
-* Combine all different One-Class SVM
-* Min, Max, Mean, Product, Majority voting
-* Apply for every $$p_i(\mathrm{x}|\omega)$$
-* Assume uniform distribution for outliers
+* 结合所有的单分类 SVM
+* 最小值，最大值，平均值，乘积，多数投票
+* 不同的模型应用不同的后验概率，$$p_i(\mathrm{x}|\omega)$$
+* 假设异常值分布均匀，则可以将这些规则转化为条件概率
 
 ### McPAD
 
-![Overview of McPAD](images/McPAD.png)
+![McPAD 总览](images/McPAD.png)
 
-* Feature Extraction
-    * $$2_v$$-grams, $$65536$$ dimensions
-        * $$n$$-grams, $$256^n$$ dimensions
-        * For $$v = 0$$, $$2$$-gram
-        * Size of sliding window, $$v + 2$$
-    * No auto way to derive $$2_(v-1)$$-grams, $$2_(v-2)$$-grams from $$2_v$$-grams
-        * Not like $$n$$-grams
-        * Different $$v$$ cause different structural information about the payload
-* Feature Reduction
-    * Cluster
+* 特征提取
+    * $$2_v$$-grams，$$65536$$ 个维度
+        * $$n$$-grams，$$256^n$$ 个维度
+        * 当 $$v = 0$$时，等效于 $$2$$-gram 模型（版的PAYL）
+        * 滑动窗口大小，$$v + 2$$
+    * 没有自动的从 $$2_v$$-grams 得到 $$2_(v-1)$$-grams，$$2_(v-2)$$-grams 的方法 
+        * 不同于 $$n$$-grams
+        * 不同的 $$v$$ 导致不同的载荷结构信息
+* 减少特征
+    * 特征聚类算法
 
-### Attacks
+### 攻击手段
 
-* Generic attacks
-* Shell-code attacks
-* CLET attacks
-* PBA attacks
+* 常见攻击
+* Shell-code 攻击
+* CLET 生成攻击
+* 多态混合攻击（Polymorphic Blending Attack，PBA）
 
-## Data
+## 数据
 
-* Normal
+* 白样本
     * DARPA
     * GATECH
-* Attacks
-    * Public non-polymorphic HTTP attack
-    * Create polymorphic HTTP attack
-    * Hard to collect a sufficient amount of attack traffic
+* 黑样本
+    * 公开的非多态 HTTP 攻击
+    * 创建多态HTTP攻击
+    * 难以收集到足够多的攻击流量
 
-## Limitation
+## 局限性
 
-* [High FP rate](http://www.cse.chalmers.se/edu/course/DAT285B/SLIDESNOTES/NGramPresentation.pptx)
+* [FP率较高](http://www.cse.chalmers.se/edu/course/DAT285B/SLIDESNOTES/NGramPresentation.pptx)
 
-## Reference
+## 参考资料
 
 * McPAD : A Multiple Classifier System for Accurate Payload-based Anomaly Detection, Perdisci et al, 2009
 * CS 259D Lecture 15

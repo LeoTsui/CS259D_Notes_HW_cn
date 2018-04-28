@@ -10,7 +10,7 @@
     - [攻击手段](#攻击手段)
 - [数据](#数据)
 - [局限性](#局限性)
-- [参考资料](#参考资料)
+- [参考资料和推荐阅读](#参考资料和推荐阅读)
 
 <!-- /TOC -->
 
@@ -67,7 +67,9 @@
 
 * [FP率较高](http://www.cse.chalmers.se/edu/course/DAT285B/SLIDESNOTES/NGramPresentation.pptx)
 
-## 参考资料
+## 参考资料和推荐阅读
 
 * McPAD : A Multiple Classifier System for Accurate Payload-based Anomaly Detection, Perdisci et al, 2009
+* HMMPayl: An intrusion detection system based on Hidden Markov Models, Ariu, 2011
+* [McPAD and HMMPayl Two Multiple-Classifier Payload-based Anomaly Detectors](http://pralab.diee.unica.it/en/HMMPayl_and_McPAD)
 * CS 259D Lecture 15

@@ -1,6 +1,6 @@
 # CS 259D 《数据挖掘与网络安全》笔记说明
 
-**本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。如无特别说明，所有图表均引用自原始论文。**
+**本笔记是对课程[CS 259D](https://web.stanford.edu/class/cs259d)中涉及的论文和讲义的扩展，建议阅读原始论文和讲义。如无特别说明，所有图表均引用自原始论文和幻灯片。**
 
 中文：[Github](https://github.com/LeoTsui/CS259D_Notes_HW_cn) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes-cn) English: [GitHub](https://github.com/LeoTsui/CS259D_Notes_HW) [GitBook](https://www.gitbook.com/book/leotsui/cs259d-notes)
 

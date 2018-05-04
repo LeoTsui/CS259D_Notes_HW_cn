@@ -1,205 +1,215 @@
 # Outside the Closed World: On Using Machine Learning for Network Intrusion Detection
 <!-- TOC -->
 
-- [Background Knowledge and Insight](#background-knowledge-and-insight)
-- [Challenges of Using Machine Learning](#challenges-of-using-machine-learning)
-    - [Outlier Detection](#outlier-detection)
-    - [High Cost of Errors](#high-cost-of-errors)
-    - [Semantic Gap, Interpretation of Results](#semantic-gap-interpretation-of-results)
-    - [Diversity of Network Traffic](#diversity-of-network-traffic)
-    - [Adaptive adversaries](#adaptive-adversaries)
-    - [Difficulties with Evaluation](#difficulties-with-evaluation)
-- [Recommendations for using Machine Learning](#recommendations-for-using-machine-learning)
-    - [Understanding the Threat Model](#understanding-the-threat-model)
-    - [Keeping The Scope Narrow](#keeping-the-scope-narrow)
-    - [Reducing the Costs](#reducing-the-costs)
-    - [Evaluation](#evaluation)
-- [Reference](#reference)
+- [背景知识和启发](#背景知识和启发)
+- [使用机器学习面临的挑战](#使用机器学习面临的挑战)
+    - [检测离群点](#检测离群点)
+    - [犯错成本高](#犯错成本高)
+    - [语义鸿沟，解读结果](#语义鸿沟解读结果)
+    - [网络流量的多样性](#网络流量的多样性)
+    - [有适应能力的对手](#有适应能力的对手)
+    - [评估困难](#评估困难)
+- [使用机器学习的建议](#使用机器学习的建议)
+    - [了解威胁模型](#了解威胁模型)
+    - [缩小范围](#缩小范围)
+    - [降低成本](#降低成本)
+    - [评估](#评估)
+- [准则：深入理解问题](#准则深入理解问题)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Background Knowledge and Insight
+## 背景知识和启发
 
-* Network Intrusion Detection Systems (NIDS)
-    *  Misuse detection
-        * _Exact descriptions_ of known bad behavior
-    * Anomaly detection
-        * Deviations from profiles of normal behavior
-        * Without _precisely describe_ activity
-        * First proposed in 1987 by Dorothy Denning (Stanford Research Institute)
-* Misuse detectors are used more commonly than anomaly detectors
-    * Despite lots of research on anomaly detection
-    * Despite anomaly detection is suitable for finding _novel_ attacks
-    * Despite success of machine learning in many other areas
+* 网络入侵检测系统（Network Intrusion Detection Systems，NIDS）
+    *  滥用检测
+        * **精确描述**已知的恶意行为
+    * 异常检测
+        * 偏离正常行为
+        * 没有**精确描述**行为活动
+        * 1987年由Dorothy Denning（斯坦福研究所）首次提出
+* 滥用探测器比异常探测器更常用
+    * 尽管对异常检测进行了大量研究
+    * 尽管异常检测适合寻找**新的**攻击
+    * 尽管机器学习在许多其他领域取得了成功
 
-## Challenges of Using Machine Learning
+## 使用机器学习面临的挑战
 
-### Outlier Detection
+### 检测离群点
 
-||Classification|Outlier detection|
-|-|-|-|
-|Training samples|Many from both classes|Almost all from one class|
-|Required quality|Enough to distinguish two classes|Perfect model of normal|
+|              | 分类                     | 异常值检测         |
+|--------------|--------------------------|--------------------|
+| 训练数据     | 来自两个类别中的多个样本 | 几乎来自同一个类别 |
+| 训练质量要求 | 能够区分两种类型         | 完美的正常模型     |
 
-* Premise: Anomaly detection can find **novel** attacks
-* Fact: ML is better at finding similar patterns than at finding outliers
-    * Example: Recommend similar products; similarity: products purchased together
-* Conclusion: ML is better for finding variants of **known** attacks
-* Hard to create **a "closed" world**
-    * Cover all cases
-* Underlying assumptions
-    * Malicious activity is anomalous
-    * Anomalies correspond to malicious activity
-* Do these assumptions hold?
-    * Former employee requests authorization code
-        * Account revocation bug? Insider threat?
-        * Username typo
-        * Brute force attack?
-        * User changed password, forgot to update script
+* 前提：异常检测可以发现**新的**攻击
+* 事实：相比较于发现离群点，机器学习更善于发现相似的模型
+    * 例如：推荐同类产品; 相似性：一起购买的产品
+* 结论：机器学习更适合发现**已知**攻击的变体
+* 很难创造**一个“封闭”的世界**
+    * 难以涵盖所有情况
+* 基本假设
+    * 恶意活动是异常情况
+    * 异常情况也对应着恶意活动
+* 这些假设是否成立？
+    * 前员工请求授权码
+        * 撤销账户出错？内部威胁？
+        * 输错用户名
+    * 用户验证失败了一万次
+        * 被暴力攻击
+        * 用户忘了密码，忘记更脚本？
 
-### High Cost of Errors
+### 犯错成本高
 
-||Cost of False Negatives|Cost of False Positives|
-|-|-|-|
-|Product recommendation|Low: potential missed sales|Low: continue shopping|
-|Spam detection|Low: spam finding way to inbox|**High**: missed important email|
-|Intrusion detection|**High**: Arbitrary damage|**High**: wasted precious analyst time|
+|              | 漏报成本                | 误报成本                  |
+|--------------|-------------------------|---------------------------|
+| 产品推荐     | 低：可能错过销售机会     | 低：继续购物               |
+| 垃圾邮件检测 | 低：在收件箱发现垃圾邮件 | **高**：错过重要的电子邮件 |
+| 入侵检测     | **高**：任何可能的损失   | **高**：浪费宝贵的分析时间 |
 
 
-### Semantic Gap, Interpretation of Results
+### 语义鸿沟，解读结果
 
-* Network operator needs actionable reports
-    * What does the anomaly mean?
-    * Abnormal activity vs. Attack
-    * Incorporation of site-specific security policies
-    * Relation between features of anomaly detection & semantics of environment
-* Local security policies
-    * Difference between academic and enterprise environment
-* Vague security policies
-    * eg: Tolerate P2P, "appropriate", "egregiously large"
+* 网络运营商需要可行的报告
+    * 这个异常是什么意思？
+    * 异常活动 vs. 攻击
+    * 并入特定于站点的安全策略
+    * 异常检测特征和环境语义间的关系
+* 本地安全策略
+    * 学术和企业环境之间的差异
+* 模糊的安全策略
+    * 例如：容忍 P2P，“适当”，“非常大”
 
-### Diversity of Network Traffic
+### 网络流量的多样性
 
-* Variability across all layers of the network
-    * Even most basic characteristics: bandwidth, duration of connections, application mix
-    * Various occurs regularly
-    * From packet-level to application-layer-level
-* Large bursts of activity
-* What is a stable notion of normality?
-* Anomalies ≠ Attacks
-* One solution: Reduced granularity
-    * Example: Time-of-Day, Day-of-Week effects exhibit reliable patterns
-    * Pro: More stable
-    * Con: Reduced visibility
+* 网络各个层次都有变化
+    * 甚至是最基本的特征：带宽，连接持续时间，应用程序组合
+    * 经常发生各种情况
+    * 从数据包级别到应用层级别
+* 大规模的活动爆发
+* “常态”有稳定的定义么？
+* 异常 ≠ 攻击
+* 一种解决方案：降低粒度
+    * 例如：依时刻、依天的得到的结果呈现出了可靠的模式
+    * 优点：更稳定
+    * 缺点：降低能见度
 
-### Adaptive adversaries
+### 有适应能力的对手
 
-* Adversaries adapt
-    * ML assumptions do not necessarily hold
-        * I.I.D, stationary distributions, linear separability, etc.
-* ML algorithm itself can be an attack target
-    * Mistraining, evasion
+* 攻击者有适应能力
+    * 机器学习的假设不一定成立
+        * 独立同分布，分布稳定，线性可分性，等等
+* 机器学习算法本身可以成为攻击目标
+    * 未学习，逃避
 
-### Difficulties with Evaluation
+### 评估困难
 
-* Difficulties of data
-    * Data's sensitive nature
-        * Personal communications
-        * Organization's business secret
-        * Nerwork access patterns
-    * Lack of appropriate public data
-        * DARPA/Lincoln Labs packet traces
-        * KDD Cup dataset
+* 数据带来的困难
+    * 数据敏感性
+        * 个人通信
+        * 机构的商业秘密
+        * 网络访问模式
+    * 缺乏适当的公开数据
+        * DARPA/Lincoln 实验室的数据包 traces
+        * KDD Cup 数据集
         * [Machine-Learning-for-Cyber-Security datasets](https://github.com/wtsxDev/Machine-Learning-for-Cyber-Security#-datasets)
         * [awesome-ml-for-cybersecurity Datasets](https://github.com/jivoi/awesome-ml-for-cybersecurity#table-of-contents)
-    * Simulation
-        * Capturing characteristics of real data
-        * Capturing novel attack detection
-    * Anonymization
-        * Fear of de-anonymization
-        * Removing features of interest to anomaly detection
-    * Assemble own datasets
-        * Not large enough
-            * Network size
-            * Datasets size
-* Interpreting the results
-    * "HTTP traffic of host did not match profile"
-    * Contrast with spam detection: Little room for interpretation
-* Adversarial setting
-    * Contrast with product recommendation: Little incentive to mislead the recommendation system
+    * 模拟
+        * 捕捉真实数据的特征
+        * 捕捉新的攻击检测
+    * 匿名
+        * 对去信息泄露的恐惧
+        * 去除与特征检测相关的特征
+    * 搭建自己的数据集
+        * 不够大
+            * 网络规模
+            * 数据集的体积
+* 解释结果
+    * “主机的 HTTP 流量与配置文件不匹配”
+    * 与垃圾邮件检测对比：解释余地小
+* 敌对的环境
+    * 与产品推荐系统相反：有意误导推荐系统的动机并不大
 
-## Recommendations for using Machine Learning
+## 使用机器学习的建议
 
-### Understanding the Threat Model
+### 了解威胁模型
 
-* What kind of target environment?
-    * Academic vs enterprise; small vs large/backbone
-* Cost of missed attacks
-    * Security demands, other deployed detectors
-* Attackers' skills and resources
-    * Targeted vs background radiation
-* Risk posed by evasion
+* 目标环境状况如何？
+    * 学术 vs 企业; 小 vs 大/骨干网路
+* 漏网的攻击带来的损失
+    * 安全需求，部署其他探测器
+* 攻击者的技能和资源
+    * “贼看见” vs “贼惦记”
+* 攻击者躲避监测系统带来的风险
 
-### Keeping The Scope Narrow
+### 缩小范围
 
-* What are the specific attacks to detect?
-* Choose the right tool for the task
-    * ML not a silver bullet
-    * Common pitfall: Start with intention to use ML or even worse a particular ML tool
-    * No Free Lunch Theorem
-* Not only mathematical guarantee, suit for domain-specific properties
-* Insight into the features' significance and capabilities
-* Example: Anomalous payload-based network intrusion detection, Wang-Stolfo 2004
-    * Features: Byte frequencies in packet payloads
-    * Algorithm: Detect packets with anomalous frequency patterns
-    * Assumption: Attack payloads have different payload byte frequencies
-    * Question: Where does this assumption come from?
-* Example: Anomaly Detection of Web-based Attacks, C. Kruegel and G. Vigna 2003
-    * Threat model
-        * Web-based attacks using input parameters to web applications 
-    * Why anomaly detection
-        * Attacks share conceptual similarities, yet different enough in their specifics for signatures 
-    * Data
-        * Successful GET requests to CGI apps, from web server Access Logs 
-    * Features
-        * Length of attribute value, Character distribution of attribute value 
-    * Why is this feature relevant
-        * Length: Buffer overflow needs to send shellcode and padding
-        * Character distribution: Directory traversal uses too many "." & "/"
+* 有待检测的特定攻击是什么
+* 为任务选择恰当的工具
+    * 机器学习不是银弹
+    * 常见的陷阱：从一开始就打算使用机器学习，甚至打算使用特定的机器学习工具
+    * 没有免费的午餐
+* 不仅需要数学上的保证，也要满足特定领域的特点
+* 洞察特征的意义和能力
+* 示例：PYAL（Anomalous payload-based network intrusion detection, Wang-Stolfo 2004） [\[笔记\]](PAYL_Anomalous_Payload-Based_Network_Intrusion_Detection_cn.html)
+    * 特征：数据包有效载荷的字节频率
+    * 算法：检测具有异常频率模式的数据包
+    * 假设：攻击载荷具有不同的字节频率
+    * 问题：这个假设从何而来？
+* 示例：Anomaly Detection of Web-based Attacks, C. Kruegel and G. Vigna 2003
+    * 威胁模型
+        * 利用 Web 应用的输入参数进行 Web 攻击
+    * 为何用异常检测
+        * 攻击和正常有相似之处，但它们特定的签名却不同 
+    * 数据
+        * 从 Web 服务器日志中，获取 CGI 的 GET 成功请求
+    * 特征
+        * 属性值的长度
+        * 属性值的字符分布
+    * 为何这些特征是相关的
+        * 长度：发送 shellcode 和填充造成缓冲区溢出
+        * 字符分布：目录遍历使用太多 `.` 和 `/`
 
-### Reducing the Costs
+### 降低成本
 
-* Reduce the system's scope
-* Classification over outlier detection
-* Aggregate or averaging features over suitable intervals
-    * Features on different granularity
-* Post-process the alerts with the support of additional information
-* Provide meta-information to analyst to speed up inspection
+* 缩小范围
+* 分类优于异常检测
+* 依照适当的时间间隔聚合以及平均特征
+    * 不同粒度下的特征
+* 利用附加信息的辅助，对警报进行后置处理
+* 分析师提供元信息以加速检查
 
-### Evaluation
+### 评估
 
 * Working with data
-    * Gold Standard
-        * Real network traffic
-        * Large network
-        * Different networks
-    * **Not bring the data to the experimenter, bring the experiment to the data**
-    * No dataset is perfect
-    * Separate training data and testing data
-* Understanding results
-    * Manually examine FP
-    * FN harder to investigate than FP
-        * Use a different mechanism to label the input
-        * Manually label a subset input
-    * Include TP and TF
-        * A ML system can produces correct results even learned nothing
-    * Causality
-    * Require low-latency real-time detection
-    * Local environment optimization
-* Develop insight into anomaly detection system's capabilities
-    * What can/can't it detect? Why?
+    * 黄金标准
+        * 真实的网络流量
+        * 大型网络
+        * 不同的网络
+    * **不要将数据带给实验者，将实验带入数据**
+    * 没有数据集是完美的
+    * 分离训练数据和测试数据
+* 理解结果
+    * 手动检查误报
+    * 漏报比误报更难检查
+        * 使用不同的机制来标记输入
+        * 手动标记输入子集
+    * 也要包含对正确结果的分析
+        * 一个机器学习系统可以产生正确的结果，甚至一无所获
+    * 因果关系
+    * 要求低延迟的实时检测
+    * 本地环境优化
+* 深入了解异常检测系统的功能
+    * 它能够/不能检测到什么？为什么？
 
-## Reference
+## 准则：深入理解问题
 
-* Outside the closed world: On using machine learning for network intrusion detection, Sommer-Paxson, 2010 
+* 机器学习是识别特征的重要方法
+* 使用这些特征构建非机器学习的检测器
+* 机器学习是最后的方法
+
+## 参考资料
+
+* Outside the closed world: On using machine learning for network intrusion detection, Sommer-Paxson, 2010
+* [\[Slides\]Outside the closed world: On using machine learning for network intrusion detection](http://oakland10.cs.virginia.edu/slides/anomaly-oakland.pdf)
 * CS 259D Session 13

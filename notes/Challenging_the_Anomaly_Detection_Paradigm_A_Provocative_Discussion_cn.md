@@ -2,80 +2,80 @@
 
 <!-- TOC -->
 
-- [Definitions of Anomaly](#definitions-of-anomaly)
-- [Assumptions And Question](#assumptions-and-question)
-    - [Problem Domain](#problem-domain)
-    - [Training Data](#training-data)
-    - [Operational Usability](#operational-usability)
-- [Recommend](#recommend)
-- [Reference](#reference)
+- [异常的定义](#异常的定义)
+- [异常检测存在的问题](#异常检测存在的问题)
+    - [假设](#假设)
+    - [训练数据](#训练数据)
+    - [可操作性](#可操作性)
+- [建议](#建议)
+- [参考资料](#参考资料)
 
 <!-- /TOC -->
 
-## Definitions of Anomaly
+## 异常的定义
 
-* Three types of anomalous
-    * Foreign-symbol anomalous
-        * Character or item appears first time
-    * Foreign n-gram anomalies
-        * Previously unseen sequence of characters
-    * Rare n-gram anomalies
-        * Sequence of characters appears more than once, but below a user specified threshold
-* Anomalous not malicious
-* Definition of "malicious"
-    * Subjective
-    * Site-specific
+* 三种异常类型
+    * 外来符号异常
+        * 字符或事物首次出现
+    * 外来 n-gram 异常
+        * 未曾见到的字符序列
+    * 罕见的 n-gram 异常
+        * 字符序列多次出现，但低于用户指定的阈值
+* 异常不意味着恶意
+* “恶意”的定义
+    * 主观评价
+    * 依特定场所而定
 
-## Assumptions And Question
+## 异常检测存在的问题
 
-### Problem Domain
+### 假设
 
-* Attacks are anomalous (different from the norm)
-    * Blind spots of detector
-    * Hind actions
-* Attacks are rare
-    * Anomaly not the smallest cluster 
-    * Scanning is on the top of flow counts
-* Anomalous activity is malicious
-    * Alpha flows (very large point-to-point data exchanges)
-    * DoS
-    * _Flash crowds_
-    * _Port scans_
-    * _Network scans_
-    * Outage events
-    * Point-to-multipoint connection (such as content distribution mechanisms)
-    * _Worms_
+* 攻击是异常的（与正常情况不同）
+    * 检测器有盲点
+    * 隐藏攻击行为
+* 攻击是罕见的
+    * 攻击不是最小的集簇
+    * 扫描是网络上的主要流量
+* 异常行为是有恶意的
+    * Alpha 流（非常大的点对点数据交换）
+    * _DoS_
+    * 大规模突发访问
+    * _端口扫描_
+    * _网络扫描_
+    * 停机事件
+    * 单点对多点连接（例如，内容分发）
+    * _蠕虫_
 
-### Training Data
+### 训练数据
 
-* Attack-free data is available
-    * Malicious behavior could last for many days
-    * Attack free data hard to obtain
-* Simulated data is representative
-    * Suspicious simulated data
-    * Labeled data expensive to obtain
-* Network traffic is static
-    * Hard to retrain or update IDS in a drifting environment
-        * IDS should be an unsupervised learning system
-    * High weight for recent data
+* 无攻击数据是可获得的
+    * 恶意行为可能会持续很多天
+    * 无攻击数据很难获得
+* 模拟数据具有代表性
+    * 模拟数据是可疑的
+    * 有标记的数据难以获得
+* 网络流量是静态的
+    * 很难在动态漂移的网络环境中再训练或更新 IDS
+        * IDS 应该是一个无监督机器学习系统
+    * 赋予最新对的数据高权重
 
-### Operational Usability
+### 可操作性
 
-* False alarm rates > 1% are acceptable
-    * Depend on the traffic volume
-* The definition of malicious is universal
-    * Depend on the organization
-* Administrators can interpret anomalies
-    * They are tired
+* 误报率 > 1% 是可以接受的
+    * 取决于流量大小
+* 恶意有普适的定义
+    * 取决于组织机构
+* 管理员可以解释异常情况
+    * 他们已经疲惫不堪了
 
-## Recommend
+## 建议
 
-* More clearly define
-* More accurate purpose
-* More models
-* More tests
+* 更明确的定义
+* 更明确的目的
+* 更多的检测模型
+* 更多的测试
 
-## Reference
+## 参考资料
 
 * Challenging the Anomaly Detection Paradigm: A Provocative Discussion, Gates-Taylor, 2007
 * CS 259D Session 13

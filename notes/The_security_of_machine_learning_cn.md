@@ -1,4 +1,4 @@
-# The security of machine learning
+# The Security of Machine Learning
 
 <!-- TOC -->
 

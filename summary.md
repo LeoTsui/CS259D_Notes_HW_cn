@@ -34,5 +34,5 @@
 * [Machine Learning for Security and Security of Machine Learning](notes/Machine_Learning_for_Security_and_Security_of_Machine_Learning_cn.md)
     * [Outside the Closed World on Using Machine Learning for Network Intrusion Detection](notes/Outside_the_closed_world_On_using_machine_learning_for_network_intrusion_detection_cn.md)
     * [Challenging the Anomaly Detection Paradigm A Provocative Discussion](notes/Challenging_the_Anomaly_Detection_Paradigm_A_Provocative_Discussion_cn.md)
-    * [The security of machine learning](notes/The_security_of_machine_learning_cn.md)
+    * [The Security of Machine Learning](notes/The_security_of_machine_learning_cn.md)
 
